@@ -1,0 +1,41 @@
+{
+  "name": "surgical-video-intelligence",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Browser-native surgical video understanding on the SurgVU 2024 release. Detection, presence, task recognition and Grad-CAM run on-device; no server, no API key, no per-frame cost.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --port=3000",
+    "build": "vite build",
+    "preview": "vite preview --port=3000",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist",
+    "build:clips": "python3 scripts/build_clips.py",
+    "build:data": "python3 scripts/build_surgvu_data.py",
+    "build:models": "python3 scripts/export_models.py",
+    "build:domain": "python3 scripts/build_domain_guard.py",
+    "bench:models": "python3 scripts/benchmark_models.py",
+    "bench:clips": "python3 scripts/benchmark_clips.py"
+  },
+  "dependencies": {
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "onnxruntime-web": "^1.29.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3",
+    "vitest": "^3.0.5"
+  }
+}

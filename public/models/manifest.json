@@ -1,0 +1,99 @@
+{
+  "models": [
+    {
+      "name": "tool",
+      "file": "tool.onnx",
+      "int8File": "tool.int8.onnx",
+      "int8SizeBytes": 3682621,
+      "int8MaxDelta": 0.8394956588745117,
+      "imageSize": 224,
+      "classes": [
+        "grasping_retractor",
+        "cadiere_forceps",
+        "bipolar_forceps",
+        "force_bipolar",
+        "clip_applier",
+        "stapler",
+        "permanent_cautery_hook_spatula",
+        "monopolar_curved_scissors",
+        "vessel_sealer",
+        "tip_up_fenestrated_grasper",
+        "bipolar_dissector",
+        "needle_driver",
+        "prograsp_forceps",
+        "suction_irrigator"
+      ],
+      "numClasses": 14,
+      "activation": "sigmoid",
+      "task": "tool_presence",
+      "metric": {
+        "val_mAP": 0.9706
+      },
+      "provenance": "Trained on five clips of the public SurgVU cat1 set, validated on two held-out clips. Only 8 of 14 classes occur in this data. Educational and research use only.",
+      "sizeBytes": 13657509,
+      "maxExportDelta": 4.76837158203125e-06
+    },
+    {
+      "name": "task",
+      "file": "task.onnx",
+      "int8File": "task.int8.onnx",
+      "int8SizeBytes": 3680678,
+      "int8MaxDelta": 0.030968904495239258,
+      "imageSize": 176,
+      "classes": [
+        "suturing",
+        "uterine_horn",
+        "rectal_artery_vein",
+        "suspensory_ligaments",
+        "skills_application",
+        "range_of_motion",
+        "retraction_collision_avoidance",
+        "other"
+      ],
+      "numClasses": 8,
+      "activation": "softmax",
+      "task": "surgical_task",
+      "metric": {
+        "val_balanced_accuracy": 0.7762,
+        "val_accuracy": 0.8444
+      },
+      "provenance": "Surgical task recognition trained on SurgVU tasks.csv intervals, split by case. Educational and research use only \u2014 not a medical device.",
+      "sizeBytes": 13649803,
+      "maxExportDelta": 1.3113021850585938e-06
+    },
+    {
+      "name": "detection",
+      "file": "detection.onnx",
+      "int8File": "detection.int8.onnx",
+      "int8SizeBytes": 2910004,
+      "int8MaxDelta": 98.14086151123047,
+      "inputName": "images",
+      "outputName": "output0",
+      "imageSize": 448,
+      "classes": [
+        "grasping_retractor",
+        "cadiere_forceps",
+        "bipolar_forceps",
+        "force_bipolar",
+        "clip_applier",
+        "stapler",
+        "permanent_cautery_hook_spatula",
+        "monopolar_curved_scissors",
+        "vessel_sealer",
+        "tip_up_fenestrated_grasper",
+        "bipolar_dissector",
+        "needle_driver",
+        "prograsp_forceps",
+        "suction_irrigator"
+      ],
+      "numClasses": 14,
+      "outputShape": [
+        "1",
+        "18",
+        "4116"
+      ],
+      "sizeBytes": 10528798
+    }
+  ],
+  "opset": 17
+}

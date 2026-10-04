@@ -1,0 +1,169 @@
+[
+  {
+    "caseId": "000",
+    "dirName": "case_000",
+    "part": 1,
+    "sourceFilename": "case_000_video_part_001.mp4",
+    "file": "clips/case_000_excerpt.mp4",
+    "sourceStartSeconds": 2015.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 4,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Clip applier",
+        "Force bipolar",
+        "Permanent cautery hook/spatula",
+        "Prograsp forceps"
+      ],
+      "tasks": [
+        "General skills application"
+      ]
+    },
+    "sizeBytes": 7132060
+  },
+  {
+    "caseId": "001",
+    "dirName": "case_001",
+    "part": 1,
+    "sourceFilename": "case_001_video_part_001.mp4",
+    "file": "clips/case_001_excerpt.mp4",
+    "sourceStartSeconds": 4490.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 7,
+      "distinctTasks": 1,
+      "boundaries": 5,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Cadiere forceps",
+        "Force bipolar",
+        "Monopolar curved scissors",
+        "Needle driver",
+        "Prograsp forceps",
+        "Stapler",
+        "Tip-up fenestrated grasper"
+      ],
+      "tasks": [
+        "Suturing"
+      ]
+    },
+    "sizeBytes": 3527590
+  },
+  {
+    "caseId": "002",
+    "dirName": "case_002",
+    "part": 2,
+    "sourceFilename": "case_002_video_part_002.mp4",
+    "file": "clips/case_002_excerpt.mp4",
+    "sourceStartSeconds": 590.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 5,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Clip applier",
+        "Force bipolar",
+        "Monopolar curved scissors",
+        "Needle driver",
+        "Prograsp forceps"
+      ],
+      "tasks": [
+        "General skills application"
+      ]
+    },
+    "sizeBytes": 4844714
+  },
+  {
+    "caseId": "003",
+    "dirName": "case_003",
+    "part": 1,
+    "sourceFilename": "case_003_video_part_001.mp4",
+    "file": "clips/case_003_excerpt.mp4",
+    "sourceStartSeconds": 6875.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 4,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Bipolar forceps",
+        "Cadiere forceps",
+        "Monopolar curved scissors",
+        "Needle driver"
+      ],
+      "tasks": [
+        "Suturing"
+      ]
+    },
+    "sizeBytes": 4746454
+  },
+  {
+    "caseId": "004",
+    "dirName": "case_004",
+    "part": 1,
+    "sourceFilename": "case_004_video_part_001.mp4",
+    "file": "clips/case_004_excerpt.mp4",
+    "sourceStartSeconds": 15920.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 4,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Bipolar forceps",
+        "Cadiere forceps",
+        "Clip applier",
+        "Monopolar curved scissors"
+      ],
+      "tasks": [
+        "Rectal artery/vein manipulation"
+      ]
+    },
+    "sizeBytes": 7037185
+  },
+  {
+    "caseId": "005",
+    "dirName": "case_005",
+    "part": 1,
+    "sourceFilename": "case_005_video_part_001.mp4",
+    "file": "clips/case_005_excerpt.mp4",
+    "sourceStartSeconds": 12500.0,
+    "durationSeconds": 75,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 5,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Bipolar forceps",
+        "Clip applier",
+        "Grasping retractor",
+        "Monopolar curved scissors",
+        "Needle driver"
+      ],
+      "tasks": [
+        "Rectal artery/vein manipulation"
+      ]
+    },
+    "sizeBytes": 6269712
+  }
+]
