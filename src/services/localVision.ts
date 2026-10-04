@@ -194,7 +194,9 @@ export class LocalVision {
    */
   async submit(source: HTMLVideoElement, timestampSeconds: number): Promise<boolean> {
     if (!this.worker || !this.info || this.busy) return false;
-    if (source.readyState < 2 || source.videoWidth === 0) return false;
+    // A seeking element, or one whose source was just swapped, can pass a
+    // readyState check and still have no decodable frame a moment later.
+    if (source.readyState < 2 || source.videoWidth === 0 || source.seeking) return false;
 
     this.busy = true;
     try {
@@ -219,6 +221,10 @@ export class LocalVision {
     } catch (err: any) {
       this.busy = false;
       const msg = err?.message || String(err);
+      // "The image source is not usable": the frame vanished between the check
+      // and the capture (seek, source switch, buffering). That is a dropped
+      // frame, not a broken pipeline; the next one will be captured normally.
+      if (err?.name === 'InvalidStateError' || /not usable/i.test(msg)) return false;
       if (msg.includes('Non-origin-clean') || msg.includes('SecurityError')) {
         this.onError?.(
           'Video source origin is restricted by CORS. Configure CORS on your cloud bucket or attach the local file.'

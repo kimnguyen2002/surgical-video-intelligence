@@ -10,12 +10,15 @@
  *     contains "procedure", which the task pattern matches.
  *   * `count` must precede `instrument`, because "how many instruments" names
  *     an instrument.
+ *   * `compare` must precede `instrument` for the same reason: "does the
+ *     prediction match the recorded instruments?" names instruments.
  *
  * Stems are matched with `\w*` rather than a closing `\b`: `\b(summar)\b` does
  * not match "summarise", since the boundary assertion fails mid-word.
  */
 
 export type Intent =
+  | 'compare'
   | 'when'
   | 'summary'
   | 'count'
@@ -27,6 +30,12 @@ export type Intent =
 
 /** First match wins. Do not reorder without reading the note above. */
 const INTENT_PATTERNS: [Intent, RegExp][] = [
+  // Before `instrument`: "does the prediction match the recorded instruments?"
+  // names instruments, but it is asking for a comparison, not a list.
+  [
+    'compare',
+    /\b(match\w*|agree\w*|disagree\w*|compar\w*|consistent|differ\w*|same as|got it right|right or wrong|correct(ly)? (predict|detect|identif)\w*|prediction(s)? (correct|right|wrong))\b/i,
+  ],
   ['when', /\b(when|at what (?:time|point)|how long|timestamps?|what time)\b/i],
   [
     'summary',

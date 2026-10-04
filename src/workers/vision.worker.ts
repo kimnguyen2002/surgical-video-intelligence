@@ -131,7 +131,7 @@ function canvasFor(size: number): OffscreenCanvas {
  * the model never saw horizontally compressed anatomy, and the browser would
  * quietly disagree with the checkpoint for no visible reason.
  */
-function preprocessClassifier(bitmap: ImageBitmap, size: number): ort.Tensor {
+function preprocessClassifier(bitmap: ImageBitmap, size: number, focusX = 0.5): ort.Tensor {
   const canvas = canvasFor(size);
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
@@ -139,7 +139,11 @@ function preprocessClassifier(bitmap: ImageBitmap, size: number): ort.Tensor {
   const scaledW = bitmap.width * scale;
   const scaledH = bitmap.height * scale;
 
-  ctx.drawImage(bitmap, (size - scaledW) / 2, (size - scaledH) / 2, scaledW, scaledH);
+  // focusX 0.5 is the centre crop the checkpoint was trained on. 0 and 1 slide
+  // the same crop to the left and right edge, which the heatmap uses to look
+  // at the whole frame rather than only its middle.
+  const offsetX = scaledW > size ? -(scaledW - size) * focusX : (size - scaledW) / 2;
+  ctx.drawImage(bitmap, offsetX, (size - scaledH) / 2, scaledW, scaledH);
   const { data } = ctx.getImageData(0, 0, size, size);
 
   const plane = size * size;
@@ -404,33 +408,30 @@ export interface ActivationMap {
   confidence: number;
   /**
    * Where the map belongs on the source frame, as fractions of its width and
-   * height.
-   *
-   * The classifier does not see the whole frame: it scales the shorter side to
-   * `size * 1.14` and takes the centre square. Drawing the heatmap across the
-   * full video would stretch a map of the centre crop over the edges it never
-   * covered, putting the hot region in the wrong place — subtly enough to look
-   * right and be wrong, which is the worst kind of wrong for an explainability
-   * overlay.
+   * height. Horizontally it spans the whole frame (three overlapping crops are
+   * stitched); vertically it spans the band the classifier's crop can see,
+   * which is about 88% of the height because the checkpoint was trained with
+   * the shorter side scaled to 1.14x the input.
    */
   region: { x: number; y: number; width: number; height: number };
 }
 
+/** The raw, non-negative class evidence for one crop, on the backbone's own grid. */
+interface RawCam {
+  values: Float32Array;
+  width: number;
+  height: number;
+}
+
 /**
- * Class activation map for one class, from the forward pass alone.
+ * Class activation for one crop, from the forward pass alone.
  *
- * Negative contributions are clamped away before normalising: a CAM is
- * evidence *for* the class, and keeping the negative lobe would paint regions
- * that argued against it in the same colour ramp as regions that argued for.
+ * Negative contributions are clamped away: a CAM is evidence *for* the class,
+ * and keeping the negative lobe would paint regions that argued against it in
+ * the same colour ramp as regions that argued for. The values are left
+ * un-normalised so that crops can be compared on one scale before stitching.
  */
-function computeActivationMap(
-  features: ort.Tensor,
-  classIndex: number,
-  label: string,
-  confidence: number,
-  bitmap: ImageBitmap,
-  inputSize: number
-): ActivationMap | null {
+function rawCam(features: ort.Tensor, classIndex: number): RawCam | null {
   if (!camWeights) return null;
 
   const dims = features.dims as number[];
@@ -449,33 +450,86 @@ function computeActivationMap(
     const base = k * plane;
     for (let i = 0; i < plane; i++) map[i] += weight * data[base + i];
   }
+  for (let i = 0; i < plane; i++) if (map[i] < 0) map[i] = 0;
+  return { values: map, width, height };
+}
+
+function sampleBilinear(cam: RawCam, u: number, v: number): number {
+  const x = Math.min(cam.width - 1, Math.max(0, u * cam.width - 0.5));
+  const y = Math.min(cam.height - 1, Math.max(0, v * cam.height - 0.5));
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = Math.min(cam.width - 1, x0 + 1);
+  const y1 = Math.min(cam.height - 1, y0 + 1);
+  const fx = x - x0;
+  const fy = y - y0;
+  const at = (xx: number, yy: number) => cam.values[yy * cam.width + xx];
+  return (
+    at(x0, y0) * (1 - fx) * (1 - fy) +
+    at(x1, y0) * fx * (1 - fy) +
+    at(x0, y1) * (1 - fx) * fy +
+    at(x1, y1) * fx * fy
+  );
+}
+
+/** Output grid width for the stitched map; the height follows the frame's aspect. */
+const STITCH_WIDTH = 64;
+
+/**
+ * Stitch crops taken at several horizontal positions into one map in frame
+ * coordinates, feathering the overlaps so no seam shows, then normalise the
+ * whole thing by a single maximum.
+ */
+function stitchActivation(
+  tiles: { cam: RawCam; focusX: number }[],
+  bitmap: ImageBitmap,
+  inputSize: number,
+  label: string,
+  confidence: number
+): ActivationMap | null {
+  const scale = (inputSize * 1.14) / Math.min(bitmap.width, bitmap.height);
+  const cropW = Math.min(1, inputSize / scale / bitmap.width);
+  const cropH = Math.min(1, inputSize / scale / bitmap.height);
+  const top = (1 - cropH) / 2;
+
+  const outW = STITCH_WIDTH;
+  const outH = Math.max(8, Math.round((outW * cropH * bitmap.height) / bitmap.width));
+  const values = new Array<number>(outW * outH).fill(0);
 
   let max = 0;
-  for (let i = 0; i < plane; i++) if (map[i] > max) max = map[i];
-  // Every position argued against the class. There is nothing to highlight,
-  // and a flat map normalised by a near-zero max would be pure amplified noise.
+  for (let oy = 0; oy < outH; oy++) {
+    const v = (oy + 0.5) / outH;
+    for (let ox = 0; ox < outW; ox++) {
+      const fx = (ox + 0.5) / outW;
+      let sum = 0;
+      let weight = 0;
+      for (const { cam, focusX } of tiles) {
+        const left = focusX * (1 - cropW);
+        if (fx < left || fx > left + cropW) continue;
+        const u = (fx - left) / cropW;
+        // Triangular feather: a crop's own edge is where it is least reliable.
+        const w = 0.1 + (1 - Math.abs(2 * u - 1));
+        sum += w * sampleBilinear(cam, u, v);
+        weight += w;
+      }
+      const value = weight > 0 ? sum / weight : 0;
+      values[oy * outW + ox] = value;
+      if (value > max) max = value;
+    }
+  }
+
+  // Every position argued against the class: nothing to show, and a flat map
+  // normalised by a near-zero max would be amplified noise.
   if (max <= 1e-6) return null;
-
-  const values = new Array<number>(plane);
-  for (let i = 0; i < plane; i++) values[i] = Math.max(0, map[i]) / max;
-
-  // Invert the centre-crop so the map lands where the classifier looked.
-  const scale = (inputSize * 1.14) / Math.min(bitmap.width, bitmap.height);
-  const cropWidth = inputSize / scale;
-  const cropHeight = inputSize / scale;
+  for (let i = 0; i < values.length; i++) values[i] /= max;
 
   return {
     values,
-    width,
-    height,
+    width: outW,
+    height: outH,
     label,
     confidence,
-    region: {
-      x: Math.max(0, (bitmap.width - cropWidth) / 2) / bitmap.width,
-      y: Math.max(0, (bitmap.height - cropHeight) / 2) / bitmap.height,
-      width: Math.min(1, cropWidth / bitmap.width),
-      height: Math.min(1, cropHeight / bitmap.height),
-    },
+    region: { x: 0, y: top, width: 1, height: cropH },
   };
 }
 
@@ -555,14 +609,28 @@ async function runInference(bitmap: ImageBitmap, runTool: boolean, runTask: bool
       for (let i = 1; i < e.classes.length; i++) {
         if (logits[i] > logits[topIndex]) topIndex = i;
       }
-      activation = computeActivationMap(
-        out.features,
-        topIndex,
-        e.classes[topIndex],
-        Math.round((1 / (1 + Math.exp(-logits[topIndex]))) * 100),
-        bitmap,
-        e.imageSize
-      );
+      const centre = rawCam(out.features, topIndex);
+      if (centre) {
+        const tiles = [{ cam: centre, focusX: 0.5 }];
+        // A wide frame is three crops wide. The two extra passes run only on the
+        // one frame in twelve the classifier runs on, so the cost is small.
+        if (bitmap.width > bitmap.height * 1.05) {
+          for (const focusX of [0, 1]) {
+            const side = await toolNet.run({
+              [toolNet.inputNames[0]]: preprocessClassifier(bitmap, e.imageSize, focusX),
+            });
+            const cam = side.features ? rawCam(side.features, topIndex) : null;
+            if (cam) tiles.push({ cam, focusX });
+          }
+        }
+        activation = stitchActivation(
+          tiles,
+          bitmap,
+          e.imageSize,
+          e.classes[topIndex],
+          Math.round((1 / (1 + Math.exp(-logits[topIndex]))) * 100)
+        );
+      }
     }
   }
 

@@ -135,15 +135,15 @@ export const VideoStage: React.FC<VideoStageProps> = ({
       />
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-1.5 bg-[#0e131b] p-1.5 rounded-lg border border-slate-800/80">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 bg-card p-1.5 rounded-lg border border-line">
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             id="btn-load-video"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800/90 hover:bg-slate-700/90 hover:text-white rounded-md transition-colors border border-slate-700/60"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fg bg-inset hover:bg-hover hover:text-white rounded-md transition-colors border border-line"
             title="Open any local video. SurgVU filenames bind to their labels automatically."
           >
-            <Upload className="w-3.5 h-3.5 text-slate-400" />
+            <Upload className="w-3.5 h-3.5 text-fg2" />
             <span>Load video</span>
           </button>
 
@@ -152,8 +152,8 @@ export const VideoStage: React.FC<VideoStageProps> = ({
             onClick={onToggleCamera}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors border ${
               videoSourceType === 'camera'
-                ? 'bg-cyan-950 text-cyan-300 border-cyan-700'
-                : 'text-slate-200 bg-slate-800/90 hover:bg-slate-700/90 hover:text-white border-slate-700/60'
+                ? 'bg-accent-soft text-accent border-accent/40'
+                : 'text-fg bg-inset hover:bg-hover hover:text-white border-line'
             }`}
             title="Connect an endoscope or webcam"
           >
@@ -165,16 +165,16 @@ export const VideoStage: React.FC<VideoStageProps> = ({
             id="btn-play-pause"
             onClick={onTogglePlay}
             disabled={!hasVideo || videoSourceType === 'youtube'}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800/90 hover:bg-slate-700/90 hover:text-white rounded-md transition-colors border border-slate-700/60 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fg bg-inset hover:bg-hover hover:text-white rounded-md transition-colors border border-line disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isPlaying ? (
               <>
-                <Pause className="w-3.5 h-3.5 text-amber-400" />
+                <Pause className="w-3.5 h-3.5 text-warn" />
                 <span>Pause</span>
               </>
             ) : (
               <>
-                <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/30" />
+                <Play className="w-3.5 h-3.5 text-ok fill-ok/30" />
                 <span>Play</span>
               </>
             )}
@@ -187,8 +187,8 @@ export const VideoStage: React.FC<VideoStageProps> = ({
             disabled={!hasVideo || videoSourceType === 'youtube' || vision.loading || !!vision.error}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all border disabled:opacity-40 disabled:cursor-not-allowed ${
               isLive
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-600 shadow-[0_0_14px_rgba(16,185,129,0.3)]'
-                : 'bg-cyan-950/80 text-cyan-200 hover:bg-cyan-900 border-cyan-700/70 hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                ? 'bg-ok-soft text-ok border-ok-line'
+                : 'bg-accent-soft text-accent hover:bg-accent-soft border-accent/40'
             }`}
             title="Run the on-device models continuously over the video"
           >
@@ -213,18 +213,18 @@ export const VideoStage: React.FC<VideoStageProps> = ({
           {/* Live performance readout — the claim of low latency, measured */}
           {vision.ready && (
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-mono rounded-md border border-slate-800 bg-[#0b1017] text-slate-400"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono rounded-md border border-line bg-card text-fg2"
               title={`Inference runs on ${vision.backend}, in a worker, entirely on this machine`}
             >
-              <Cpu className="w-3 h-3 text-slate-500" />
+              <Cpu className="w-3 h-3 text-fg2" />
               <span className="uppercase">{vision.backend}</span>
               {isLive && vision.medianMs > 0 && (
                 <>
-                  <span className="text-slate-700">│</span>
-                  <span className={vision.medianMs <= 100 ? 'text-emerald-400' : 'text-amber-400'}>
+                  <span className="text-fg2">│</span>
+                  <span className={vision.medianMs <= 100 ? 'text-ok' : 'text-warn'}>
                     {vision.medianMs} ms
                   </span>
-                  <span className="text-slate-500">{vision.fps} fps</span>
+                  <span className="text-fg2">{vision.fps} fps</span>
                 </>
               )}
             </div>
@@ -239,8 +239,8 @@ export const VideoStage: React.FC<VideoStageProps> = ({
               onClick={onToggleActivation}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors ${
                 showActivation
-                  ? 'border-amber-600/70 bg-amber-950/50 text-amber-300'
-                  : 'border-slate-800 bg-[#0b1017] text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                  ? 'border-warn-line bg-warn-soft text-warn'
+                  : 'border-line bg-card text-fg2 hover:text-fg hover:bg-hover'
               }`}
               title="Class activation map: which regions drove the instrument-presence score. Computed from the forward pass, not from gradients."
             >
@@ -253,7 +253,7 @@ export const VideoStage: React.FC<VideoStageProps> = ({
         <button
           id="btn-clear-stage"
           onClick={onClear}
-          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 rounded-md transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-fg2 hover:text-fg hover:bg-hover rounded-md transition-colors"
           title="Clear predictions and keyframes"
         >
           <X className="w-3.5 h-3.5" />
@@ -262,8 +262,8 @@ export const VideoStage: React.FC<VideoStageProps> = ({
       </div>
 
       {vision.error && (
-        <div className="flex items-start gap-2 px-3 py-2 text-[11px] text-amber-200 bg-amber-950/30 border border-amber-900/50 rounded-md">
-          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-400" />
+        <div className="flex items-start gap-2 px-3 py-2 text-xs text-warn bg-warn-soft border border-warn-line rounded-md">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-warn" />
           <span>
             On-device vision unavailable: {vision.error} Recorded dataset labels and the assistant
             still work.
@@ -275,7 +275,7 @@ export const VideoStage: React.FC<VideoStageProps> = ({
       <div
         ref={containerRef}
         id="video-viewport-container"
-        className="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center group"
+        className="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-line shadow-2xl flex items-center justify-center group"
       >
         {videoSourceType === 'youtube' && videoUrl ? (
           <iframe
@@ -311,11 +311,11 @@ export const VideoStage: React.FC<VideoStageProps> = ({
 
         {!hasVideo && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-8">
-            <MonitorPlay className="w-10 h-10 text-slate-700" />
-            <p className="text-sm font-medium text-slate-400">No video loaded</p>
-            <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+            <MonitorPlay className="w-10 h-10 text-slate-500" />
+            <p className="text-sm font-medium text-slate-300">No video loaded</p>
+            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
               Select a case part below to begin playback with recorded labels. Press{' '}
-              <span className="font-mono text-slate-300">Analyse frames (live)</span> to run on-device detection.
+              <span className="font-mono text-slate-200">Analyse frames (live)</span> to run on-device detection.
             </p>
           </div>
         )}
@@ -332,7 +332,7 @@ export const VideoStage: React.FC<VideoStageProps> = ({
 
         {/* Recorded badge */}
         {recordedToolCount !== null && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/80 border border-emerald-700/70 text-[10px] text-emerald-300 backdrop-blur-sm">
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/80 border border-emerald-500/50 text-[11px] text-emerald-300 backdrop-blur-sm">
             <ShieldCheck className="w-3 h-3" />
             <span>
               {recordedToolCount} recorded {recordedToolCount === 1 ? 'instrument' : 'instruments'}
@@ -342,7 +342,7 @@ export const VideoStage: React.FC<VideoStageProps> = ({
 
         {/* Live badge */}
         {isLive && (
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 border border-amber-600/70 text-[10px] text-amber-300 backdrop-blur-sm font-mono">
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 border border-amber-400/60 text-[11px] text-amber-300 backdrop-blur-sm font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
             <span>LIVE {vision.medianMs > 0 ? `${vision.medianMs}ms` : ''}</span>
           </div>
@@ -357,15 +357,15 @@ export const VideoStage: React.FC<VideoStageProps> = ({
                 const rect = e.currentTarget.getBoundingClientRect();
                 onSeek(((e.clientX - rect.left) / rect.width) * duration);
               }}
-              className="w-full h-1.5 bg-slate-700/80 hover:h-2.5 rounded-full cursor-pointer transition-all relative overflow-hidden"
+              className="w-full h-1.5 bg-white/25 hover:h-2.5 rounded-full cursor-pointer transition-all relative overflow-hidden"
             >
               <div
-                className="h-full bg-cyan-500 rounded-full"
+                className="h-full bg-sky-400 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-300">
+            <div className="flex items-center justify-between text-xs text-slate-200">
               <div className="flex items-center gap-3">
                 <button onClick={onTogglePlay} className="hover:text-white transition-colors">
                   {isPlaying ? (
@@ -374,7 +374,7 @@ export const VideoStage: React.FC<VideoStageProps> = ({
                     <Play className="w-4 h-4 fill-current" />
                   )}
                 </button>
-                <span className="font-mono text-slate-200 tracking-wider">
+                <span className="font-mono text-white tracking-wider">
                   {formatClock(currentTime)} / {formatClock(duration)}
                 </span>
               </div>
@@ -405,33 +405,33 @@ export const VideoStage: React.FC<VideoStageProps> = ({
       </div>
 
       {/* Source line */}
-      <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+      <div className="flex items-center justify-between text-xs text-fg2 font-mono px-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Film className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <Film className="w-3 h-3 text-fg2 flex-shrink-0" />
           <span className="truncate">{videoFilename}</span>
         </div>
 
         {currentObservation?.phase && (
-          <span className="text-amber-400/90 font-sans font-medium flex-shrink-0 ml-2">
+          <span className="text-warn font-sans font-medium flex-shrink-0 ml-2">
             Predicted task: {currentObservation.phase}
           </span>
         )}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 pt-1 text-[11px] text-slate-300 border-t border-slate-800/60">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 pt-1 text-xs text-fg2 border-t border-line">
         <div className="flex items-center gap-2">
-          <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/80 rounded bg-emerald-950/40">
+          <span className="inline-block px-1.5 py-0.5 text-[11px] font-semibold text-ok border border-ok-line rounded bg-ok-soft">
             Recorded
           </span>
-          <span className="text-slate-400">— dataset fact, listed not boxed, no confidence</span>
+          <span className="text-fg2">— dataset fact, listed not boxed, no confidence</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold text-amber-400 border border-dashed border-amber-400 rounded bg-amber-950/40">
+          <span className="inline-block px-1.5 py-0.5 text-[11px] font-semibold text-warn border border-dashed border-warn-line rounded bg-warn-soft">
             Predicted
           </span>
-          <span className="text-slate-400">— on-device model, boxed, always with a percentage</span>
+          <span className="text-fg2">— on-device model, boxed, always with a percentage</span>
         </div>
       </div>
     </div>

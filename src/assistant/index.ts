@@ -1,7 +1,9 @@
 /**
  * The assistant: which answer path runs, and in what order.
  *
- * Three paths, tried in this order, and the order is the design:
+ * A conversational layer (`conversation.ts`) runs first: greetings, questions
+ * about the app, instrument and task definitions, and refusals of clinical
+ * advice. Then three paths, tried in this order, and the order is the design:
  *
  * 1. **Grounded** (`grounded.ts`) — structured facts. Free, instant, offline,
  *    and for factual questions about the video it is simply *better*: the
@@ -24,7 +26,8 @@
  */
 
 import { answerFromFacts, type GroundedAnswer } from './grounded';
-import { cannotAnswer, composeFromPassages } from './extractive';
+import { composeFromPassages } from './extractive';
+import { converse, notTrainedFor } from './conversation';
 import { classifyIntent } from './intents';
 import { hasAnyFacts, type VideoFacts } from './facts';
 import { retrieve } from './retrieval';
@@ -32,7 +35,7 @@ import { buildSystemInstruction } from './prompt';
 import { apiKey, generate, GeminiError, type ChatTurn } from '../services/byokGemini';
 import type { AssistantRole, SpecialtyId } from '../types';
 
-export type AnswerSource = 'grounded' | 'extractive' | 'generative' | 'none';
+export type AnswerSource = 'builtin' | 'grounded' | 'extractive' | 'generative' | 'none';
 
 export interface Answer {
   text: string;
@@ -62,10 +65,21 @@ export interface AskOptions {
  * forceps" through a language model cannot make it more correct, can make it
  * less, and costs a request.
  */
-const FACTUAL_INTENTS = new Set(['instrument', 'count', 'when', 'list']);
+const FACTUAL_INTENTS = new Set(['compare', 'instrument', 'count', 'when', 'list']);
 
 export async function ask(question: string, options: AskOptions): Promise<Answer> {
   const { facts, role, specialty, history, useGenerative, signal } = options;
+
+  // --- 0. Conversation and refusal, before anything can be retrieved or
+  // generated. A declined clinical question must never reach a model.
+  const conversational = converse(question, facts);
+  if (conversational) {
+    return {
+      text: conversational.text,
+      source: conversational.refusal ? 'none' : 'builtin',
+      generative: false,
+    };
+  }
 
   // Retrieval feeds both the extractive path and the generative prompt, so it
   // runs once, up front, regardless of which path is taken.
@@ -113,7 +127,7 @@ export async function ask(question: string, options: AskOptions): Promise<Answer
         return { text: extractive.text, source: 'extractive', generative: false, warning };
       }
       return {
-        text: cannotAnswer(apiKey.configured),
+        text: notTrainedFor(apiKey.configured),
         source: 'none',
         generative: false,
         warning,
@@ -129,7 +143,7 @@ export async function ask(question: string, options: AskOptions): Promise<Answer
   if (extractive) return { text: extractive.text, source: 'extractive', generative: false };
 
   // --- Nothing. Say so. ----------------------------------------------------
-  return { text: cannotAnswer(apiKey.configured), source: 'none', generative: false };
+  return { text: notTrainedFor(apiKey.configured), source: 'none', generative: false };
 }
 
 export { hasAnyFacts };

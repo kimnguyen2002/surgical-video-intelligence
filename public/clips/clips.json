@@ -4,9 +4,9 @@
     "dirName": "case_000",
     "part": 1,
     "sourceFilename": "case_000_video_part_001.mp4",
-    "file": "clips/case_000_excerpt.mp4",
-    "sourceStartSeconds": 2015.0,
-    "durationSeconds": 75,
+    "file": "clips/case_000_part_001_excerpt.mp4",
+    "sourceStartSeconds": 1970.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -24,16 +24,16 @@
         "General skills application"
       ]
     },
-    "sizeBytes": 7132060
+    "sizeBytes": 11746814
   },
   {
     "caseId": "001",
     "dirName": "case_001",
     "part": 1,
     "sourceFilename": "case_001_video_part_001.mp4",
-    "file": "clips/case_001_excerpt.mp4",
-    "sourceStartSeconds": 4490.0,
-    "durationSeconds": 75,
+    "file": "clips/case_001_part_001_excerpt.mp4",
+    "sourceStartSeconds": 4445.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -54,16 +54,44 @@
         "Suturing"
       ]
     },
-    "sizeBytes": 3527590
+    "sizeBytes": 6727408
+  },
+  {
+    "caseId": "002",
+    "dirName": "case_002",
+    "part": 1,
+    "sourceFilename": "case_002_video_part_001.mp4",
+    "file": "clips/case_002_part_001_excerpt.mp4",
+    "sourceStartSeconds": 15380.0,
+    "durationSeconds": 120,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 5,
+      "distinctTasks": 1,
+      "boundaries": 4,
+      "taskCoverage": 1.0,
+      "tools": [
+        "Bipolar forceps",
+        "Cadiere forceps",
+        "Clip applier",
+        "Monopolar curved scissors",
+        "Needle driver"
+      ],
+      "tasks": [
+        "Rectal artery/vein manipulation"
+      ]
+    },
+    "sizeBytes": 7196342
   },
   {
     "caseId": "002",
     "dirName": "case_002",
     "part": 2,
     "sourceFilename": "case_002_video_part_002.mp4",
-    "file": "clips/case_002_excerpt.mp4",
-    "sourceStartSeconds": 590.0,
-    "durationSeconds": 75,
+    "file": "clips/case_002_part_002_excerpt.mp4",
+    "sourceStartSeconds": 545.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -82,16 +110,16 @@
         "General skills application"
       ]
     },
-    "sizeBytes": 4844714
+    "sizeBytes": 7183609
   },
   {
     "caseId": "003",
     "dirName": "case_003",
     "part": 1,
     "sourceFilename": "case_003_video_part_001.mp4",
-    "file": "clips/case_003_excerpt.mp4",
-    "sourceStartSeconds": 6875.0,
-    "durationSeconds": 75,
+    "file": "clips/case_003_part_001_excerpt.mp4",
+    "sourceStartSeconds": 6830.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -109,16 +137,41 @@
         "Suturing"
       ]
     },
-    "sizeBytes": 4746454
+    "sizeBytes": 7642197
+  },
+  {
+    "caseId": "003",
+    "dirName": "case_003",
+    "part": 2,
+    "sourceFilename": "case_003_video_part_002.mp4",
+    "file": "clips/case_003_part_002_excerpt.mp4",
+    "sourceStartSeconds": 515.0,
+    "durationSeconds": 120,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 4,
+      "distinctTasks": 0,
+      "boundaries": 4,
+      "taskCoverage": 0.0,
+      "tools": [
+        "Bipolar forceps",
+        "Monopolar curved scissors",
+        "Needle driver",
+        "Stapler"
+      ],
+      "tasks": []
+    },
+    "sizeBytes": 6614862
   },
   {
     "caseId": "004",
     "dirName": "case_004",
     "part": 1,
     "sourceFilename": "case_004_video_part_001.mp4",
-    "file": "clips/case_004_excerpt.mp4",
-    "sourceStartSeconds": 15920.0,
-    "durationSeconds": 75,
+    "file": "clips/case_004_part_001_excerpt.mp4",
+    "sourceStartSeconds": 15875.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -136,16 +189,41 @@
         "Rectal artery/vein manipulation"
       ]
     },
-    "sizeBytes": 7037185
+    "sizeBytes": 11937265
+  },
+  {
+    "caseId": "004",
+    "dirName": "case_004",
+    "part": 2,
+    "sourceFilename": "case_004_video_part_002.mp4",
+    "file": "clips/case_004_part_002_excerpt.mp4",
+    "sourceStartSeconds": 890.0,
+    "durationSeconds": 120,
+    "width": 960,
+    "fps": 24,
+    "selection": {
+      "distinctTools": 4,
+      "distinctTasks": 0,
+      "boundaries": 4,
+      "taskCoverage": 0.0,
+      "tools": [
+        "Bipolar forceps",
+        "Cadiere forceps",
+        "Stapler",
+        "Vessel sealer"
+      ],
+      "tasks": []
+    },
+    "sizeBytes": 9070880
   },
   {
     "caseId": "005",
     "dirName": "case_005",
     "part": 1,
     "sourceFilename": "case_005_video_part_001.mp4",
-    "file": "clips/case_005_excerpt.mp4",
-    "sourceStartSeconds": 12500.0,
-    "durationSeconds": 75,
+    "file": "clips/case_005_part_001_excerpt.mp4",
+    "sourceStartSeconds": 12455.0,
+    "durationSeconds": 120,
     "width": 960,
     "fps": 24,
     "selection": {
@@ -164,6 +242,6 @@
         "Rectal artery/vein manipulation"
       ]
     },
-    "sizeBytes": 6269712
+    "sizeBytes": 9981188
   }
 ]

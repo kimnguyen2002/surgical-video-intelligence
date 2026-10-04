@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { SURGVU_CASES } from '../data/surgvuCases';
-import { SURGVU_CLIPS_TOTAL_BYTES, clipFor } from '../data/surgvuClips';
+import { SURGVU_CLIPS, SURGVU_CLIPS_TOTAL_BYTES, clipFor } from '../data/surgvuClips';
 import { formatBytes, formatClock, matchFileToPart } from '../services/groundTruth';
 import { toolDisplay } from '../data/surgvuVocab';
 
@@ -95,18 +95,18 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
   };
 
   const attachedCount = attachedFiles.size;
-  const excerptCount = SURGVU_CASES.filter((c) => clipFor(c.caseId)).length;
+  const excerptCount = SURGVU_CLIPS.length;
 
   return (
-    <div className="bg-[#0b1017] p-3.5 rounded-lg border border-slate-800/80 flex flex-col space-y-3">
+    <div className="bg-card p-3.5 rounded-lg border border-line flex flex-col space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          <Database className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-fg">
+          <Database className="w-3.5 h-3.5 text-ok" />
           <span>SurgVU case library</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-500 font-mono">
+          <span className="text-xs text-fg2 font-mono">
             {attachedCount > 0
               ? `${attachedCount} attached · ${excerptCount} excerpts`
               : `${excerptCount} excerpts · ${totals.parts} parts`}
@@ -115,23 +115,23 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
       </div>
 
       {/* What you are actually about to play, and what you are not. */}
-      <div className="bg-gradient-to-r from-emerald-950/30 via-[#0e1624] to-slate-900/60 border border-emerald-800/40 rounded-md p-2.5 flex items-start justify-between gap-2">
+      <div className="bg-card border border-line rounded-md p-2.5 flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 min-w-0">
-          <div className="p-1 rounded bg-emerald-500/10 text-emerald-400 flex-shrink-0 mt-0.5">
+          <div className="p-1 rounded bg-ok-soft text-ok flex-shrink-0 mt-0.5">
             <Scissors className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-medium text-slate-200">
+            <div className="text-xs font-medium text-fg">
               {excerptCount} excerpts bundled ({formatBytes(SURGVU_CLIPS_TOTAL_BYTES)})
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-              75 seconds per case, cut from its most densely-labelled window — not from the start,
+            <div className="text-[11px] text-fg2 mt-0.5 leading-relaxed">
+              Two minutes per part, cut from its most densely-labelled window — not from the start,
               where nothing is installed and nothing is labelled. Timestamps shown are the real
               ones from the full recording.
             </div>
           </div>
         </div>
-        <span className="text-[10px] text-emerald-300/80 bg-emerald-950/80 border border-emerald-800/60 px-2 py-1 rounded whitespace-nowrap flex-shrink-0">
+        <span className="text-[11px] text-ok bg-ok-soft border border-ok-line px-2 py-1 rounded whitespace-nowrap flex-shrink-0">
           No upload
         </span>
       </div>
@@ -144,10 +144,10 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
           { icon: ListChecks, value: formatClock(totals.seconds).split(':')[0] + ' h', label: 'footage' },
           { icon: Wrench, value: `${totals.intervals}`, label: 'labelled intervals' },
         ].map((stat) => (
-          <div key={stat.label} className="bg-[#0e141f] border border-slate-800 rounded-md py-1.5 px-1">
-            <stat.icon className="w-3 h-3 text-slate-500 mx-auto mb-0.5" />
-            <div className="text-[13px] font-semibold text-slate-200 leading-none">{stat.value}</div>
-            <div className="text-[9px] text-slate-500 mt-0.5">{stat.label}</div>
+          <div key={stat.label} className="bg-card border border-line rounded-md py-1.5 px-1">
+            <stat.icon className="w-3 h-3 text-fg2 mx-auto mb-0.5" />
+            <div className="text-[13px] font-semibold text-fg leading-none">{stat.value}</div>
+            <div className="text-[11px] text-fg2 mt-0.5">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -176,34 +176,34 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
       />
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
-        <span className="text-[11px] font-medium text-slate-400">
+        <span className="text-xs font-medium text-fg2">
           Select any case below to stream, or override with local disk files:
         </span>
         <div className="flex gap-1.5 flex-shrink-0">
           <button
             id="btn-attach-folder"
             onClick={() => folderInputRef.current?.click()}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-300 bg-slate-800/90 hover:bg-slate-700/90 rounded transition-colors border border-slate-700/60"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-fg2 bg-inset hover:bg-hover rounded transition-colors border border-line"
             title="Pick a local folder if you prefer zero-network local playback"
           >
-            <FolderOpen className="w-3 h-3 text-slate-400" />
+            <FolderOpen className="w-3 h-3 text-fg2" />
             <span>Attach folder</span>
           </button>
 
           <button
             id="btn-attach-files"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-300 bg-slate-800/90 hover:bg-slate-700/90 rounded transition-colors border border-slate-700/60"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-fg2 bg-inset hover:bg-hover rounded transition-colors border border-line"
             title="Attach a single local mp4 file"
           >
-            <FileVideo className="w-3 h-3 text-slate-400" />
+            <FileVideo className="w-3 h-3 text-fg2" />
             <span>Single file</span>
           </button>
         </div>
       </div>
 
       {rejected.length > 0 && (
-        <div className="text-[10px] text-amber-300/90 bg-amber-950/30 border border-amber-900/50 rounded p-2 leading-snug">
+        <div className="text-[11px] text-warn bg-warn-soft border border-warn-line rounded p-2 leading-snug">
           Not in the SurgVU manifest, so not attached (no labels exist for them):{' '}
           <span className="font-mono">{rejected.slice(0, 3).join(', ')}</span>
           {rejected.length > 3 && ` and ${rejected.length - 3} more`}.
@@ -219,36 +219,36 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
           ).length;
 
           return (
-            <div key={surgCase.caseId} className="rounded-md border border-slate-800/80 bg-[#0e141f]">
+            <div key={surgCase.caseId} className="rounded-md border border-line bg-card">
               <button
                 onClick={() => toggleCase(surgCase.caseId)}
-                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 hover:bg-slate-800/40 transition-colors rounded-md"
+                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 hover:bg-hover transition-colors rounded-md"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {isOpen ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                    <ChevronDown className="w-3.5 h-3.5 text-fg2 flex-shrink-0" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 text-fg2 flex-shrink-0" />
                   )}
-                  <span className="text-xs font-semibold text-slate-200">
+                  <span className="text-xs font-semibold text-fg">
                     case_{surgCase.caseId}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[11px] text-fg2 font-mono">
                     {formatClock(surgCase.totalDurationSeconds)} · {surgCase.parts.length}{' '}
                     {surgCase.parts.length === 1 ? 'part' : 'parts'}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="text-[10px] text-slate-500">
+                  <span className="text-[11px] text-fg2">
                     {surgCase.toolIntervalCount} tool · {surgCase.taskIntervalCount} task
                   </span>
                   {attachedInCase > 0 ? (
-                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.2 rounded">
+                    <span className="text-[11px] text-ok bg-ok-soft border border-ok-line px-1.5 py-0.2 rounded">
                       Local
                     </span>
-                  ) : clipFor(surgCase.caseId) ? (
-                    <span className="text-[10px] text-cyan-400 bg-cyan-950/60 border border-cyan-800/60 px-1.5 py-0.2 rounded">
+                  ) : surgCase.parts.some((p) => clipFor(surgCase.caseId, p.part)) ? (
+                    <span className="text-[11px] text-accent bg-accent-soft border border-accent/40 px-1.5 py-0.2 rounded">
                       Excerpt
                     </span>
                   ) : null}
@@ -262,7 +262,7 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
                     {surgCase.toolClasses.map((cls) => (
                       <span
                         key={cls}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/50 text-emerald-300/90 border border-emerald-900/50"
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-inset text-fg2 border border-line"
                       >
                         {toolDisplay(cls)}
                       </span>
@@ -274,12 +274,9 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
                     const file = attachedFiles.get(key);
                     const isActive = activePartId === key;
                     // A part is playable when the visitor attached the real
-                    // file, or when the bundled excerpt was cut from this
-                    // exact part. An excerpt from part 2 does not make part 1
-                    // playable, and offering it as though it did would put
-                    // part 2's frames under part 1's label.
-                    const excerpt = clipFor(surgCase.caseId);
-                    const hasExcerpt = excerpt?.part === part.part;
+                    // file, or when an excerpt was cut from this exact part.
+                    const excerpt = clipFor(surgCase.caseId, part.part);
+                    const hasExcerpt = Boolean(excerpt);
                     const isAvailable = Boolean(file || hasExcerpt);
 
                     return (
@@ -288,40 +285,40 @@ export const CaseLibrary: React.FC<CaseLibraryProps> = ({
                         id={`library-part-${key.replace('/', '-')}`}
                         disabled={!isAvailable}
                         onClick={() => onSelectPart(surgCase.caseId, part.part)}
-                        className={`w-full text-left px-2 py-1.5 rounded border text-[11px] transition-colors flex items-center justify-between gap-2 ${
+                        className={`w-full text-left px-2 py-1.5 rounded border text-xs transition-colors flex items-center justify-between gap-2 ${
                           isActive
-                            ? 'border-cyan-500 bg-cyan-950/60 text-cyan-100 shadow-sm'
+                            ? 'border-accent bg-accent-soft text-accent shadow-sm'
                             : file
-                              ? 'border-slate-700/70 bg-[#131b26] text-slate-200 hover:border-emerald-600/70 hover:bg-emerald-950/20 cursor-pointer'
+                              ? 'border-line bg-inset text-fg hover:border-ok-line hover:bg-ok-soft cursor-pointer'
                               : hasExcerpt
-                                ? 'border-slate-800 bg-[#101723] text-slate-200 hover:border-cyan-600/70 hover:bg-cyan-950/20 cursor-pointer'
-                                : 'border-dashed border-slate-800 bg-transparent text-slate-500 cursor-not-allowed'
+                                ? 'border-line bg-inset text-fg hover:border-accent/40 hover:bg-accent-soft cursor-pointer'
+                                : 'border-dashed border-line bg-transparent text-fg2 cursor-not-allowed'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {file ? (
-                            <HardDrive className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                            <HardDrive className="w-3 h-3 text-ok flex-shrink-0" />
                           ) : hasExcerpt ? (
-                            <Scissors className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+                            <Scissors className="w-3 h-3 text-accent flex-shrink-0" />
                           ) : (
-                            <FileVideo className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                            <FileVideo className="w-3 h-3 text-fg2 flex-shrink-0" />
                           )}
                           <span className="font-mono truncate">{part.filename}</span>
                         </div>
                         <span className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-[10px] opacity-80">
+                          <span className="text-[11px] opacity-80">
                             {formatClock(part.durationSeconds)} · {formatBytes(part.sizeBytes)}
                           </span>
                           {file ? (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-ok-soft text-ok border border-ok-line">
                               Local
                             </span>
                           ) : hasExcerpt ? (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/80">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent/40">
                               {excerpt!.durationSeconds}s excerpt
                             </span>
                           ) : (
-                            <span className="text-[9px] italic text-slate-500">not attached</span>
+                            <span className="text-[11px] italic text-fg2">not attached</span>
                           )}
                         </span>
                       </button>

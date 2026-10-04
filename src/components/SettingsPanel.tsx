@@ -109,14 +109,14 @@ export function SettingsPanel({
       onClick={onClose}
     >
       <div
-        className="mt-10 w-full max-w-xl rounded-xl border border-slate-700 bg-[#0d141f] shadow-2xl"
+        className="mt-10 w-full max-w-xl rounded-lg border border-line bg-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-100">Settings</h2>
+        <header className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="text-sm font-semibold text-fg">Settings</h2>
           <button
             onClick={onClose}
-            className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200"
+            className="rounded p-1 text-fg2 transition-colors hover:bg-hover hover:text-fg"
             aria-label="Close settings"
           >
             <X className="h-4 w-4" />
@@ -126,10 +126,10 @@ export function SettingsPanel({
         <div className="space-y-6 px-5 py-5">
           {/* ---- Audience ---- */}
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <h3 className="text-xs font-semibold text-fg2">
               Answer for
             </h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-fg2">
               Changes how much is explained and in what register — a resident and a
               computer-vision researcher want different answers to the same question.
             </p>
@@ -140,8 +140,8 @@ export function SettingsPanel({
                   onClick={() => onRoleChange(r)}
                   className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
                     role === r
-                      ? 'border-cyan-500/60 bg-cyan-950/60 font-semibold text-cyan-300'
-                      : 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                      ? 'border-accent/40 bg-accent-soft font-semibold text-accent'
+                      : 'border-line text-fg2 hover:bg-hover'
                   }`}
                 >
                   {r}
@@ -151,12 +151,12 @@ export function SettingsPanel({
           </section>
 
           {/* ---- The cost model, stated plainly ---- */}
-          <section className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-4">
-            <h3 className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+          <section className="rounded-lg border border-ok-line bg-ok-soft p-4">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-ok">
               <Check className="h-3.5 w-3.5" />
               No key needed
             </h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-300">
+            <p className="mt-2 text-xs leading-relaxed text-fg2">
               Instrument detection, presence and task recognition, the activation heatmap and the assistant all
               run <strong>in this browser</strong>. Nothing is uploaded, no server is involved, and
               there is no API to run out of. The assistant answers questions about the video from
@@ -167,11 +167,11 @@ export function SettingsPanel({
 
           {/* ---- Optional BYO key ---- */}
           <section>
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-fg2">
               <Key className="h-3.5 w-3.5" />
               Language model (optional)
             </h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            <p className="mt-1 text-xs leading-relaxed text-fg2">
               For generated explanations — <em>why</em> a step is sequenced this way, what the
               trade-offs are — add your own Gemini API key. It is stored in this browser only and
               sent directly to Google; it never reaches any server belonging to this project,
@@ -192,11 +192,11 @@ export function SettingsPanel({
                       placeholder="AIza…"
                       autoComplete="off"
                       spellCheck={false}
-                      className="w-full rounded-md border border-slate-700 bg-[#070a0f] px-3 py-2 pr-9 font-mono text-xs text-slate-200 outline-none focus:border-cyan-600"
+                      className="w-full rounded-md border border-line bg-page px-3 py-2 pr-9 font-mono text-xs text-fg outline-none focus:border-accent"
                     />
                     <button
                       onClick={() => setRevealed((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-fg2 hover:text-fg2"
                       aria-label={revealed ? 'Hide key' : 'Show key'}
                     >
                       {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -205,7 +205,7 @@ export function SettingsPanel({
                   <button
                     onClick={() => void saveKey()}
                     disabled={!draftKey.trim()}
-                    className="rounded-md bg-cyan-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Save
                   </button>
@@ -214,7 +214,7 @@ export function SettingsPanel({
                   href="https://aistudio.google.com/apikey"
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
                 >
                   Get a free Gemini API key
                   <ExternalLink className="h-3 w-3" />
@@ -223,19 +223,19 @@ export function SettingsPanel({
             )}
 
             {keyState.kind === 'checking' && (
-              <p className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+              <p className="mt-3 flex items-center gap-2 text-xs text-fg2">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Checking the key…
               </p>
             )}
 
             {keyState.kind === 'invalid' && (
-              <div className="mt-3 space-y-2 rounded-md border border-amber-900/60 bg-amber-950/20 p-3">
-                <p className="text-xs text-amber-300">{keyState.message}</p>
-                {keyState.hint && <p className="text-[11px] text-slate-400">{keyState.hint}</p>}
+              <div className="mt-3 space-y-2 rounded-md border border-warn-line bg-warn-soft p-3">
+                <p className="text-xs text-warn">{keyState.message}</p>
+                {keyState.hint && <p className="text-xs text-fg2">{keyState.hint}</p>}
                 <button
                   onClick={() => void clearKey()}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-300 hover:text-red-300"
+                  className="inline-flex items-center gap-1.5 text-xs text-fg2 hover:text-risk"
                 >
                   <Trash2 className="h-3 w-3" />
                   Remove this key
@@ -245,14 +245,14 @@ export function SettingsPanel({
 
             {keyState.kind === 'valid' && (
               <div className="mt-3 space-y-3">
-                <div className="flex items-center justify-between rounded-md border border-emerald-900/60 bg-emerald-950/20 px-3 py-2">
-                  <span className="flex items-center gap-2 text-xs text-emerald-300">
+                <div className="flex items-center justify-between rounded-md border border-ok-line bg-ok-soft px-3 py-2">
+                  <span className="flex items-center gap-2 text-xs text-ok">
                     <Check className="h-3.5 w-3.5" />
                     Key verified
                   </span>
                   <button
                     onClick={() => void clearKey()}
-                    className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-red-300"
+                    className="inline-flex items-center gap-1.5 text-xs text-fg2 hover:text-risk"
                   >
                     <Trash2 className="h-3 w-3" />
                     Remove
@@ -266,9 +266,9 @@ export function SettingsPanel({
                     onChange={(event) => onUseGenerativeChange(event.target.checked)}
                     className="mt-0.5 h-3.5 w-3.5 accent-cyan-500"
                   />
-                  <span className="text-xs leading-relaxed text-slate-300">
+                  <span className="text-xs leading-relaxed text-fg2">
                     Use generated answers for open-ended questions.
-                    <span className="mt-0.5 block text-[11px] text-slate-500">
+                    <span className="mt-0.5 block text-xs text-fg2">
                       Factual lookups — which instrument, how many, when — stay on the grounded
                       path either way. Paraphrasing a dataset value through a model cannot make it
                       more correct, can make it less, and costs a request.
@@ -278,14 +278,14 @@ export function SettingsPanel({
 
                 {models.length > 0 && (
                   <label className="block">
-                    <span className="text-[11px] text-slate-400">Model</span>
+                    <span className="text-xs text-fg2">Model</span>
                     <select
                       value={modelId || keyState.model}
                       onChange={(event) => {
                         preferredModel.set(event.target.value);
                         onModelChange(event.target.value);
                       }}
-                      className="mt-1 w-full rounded-md border border-slate-700 bg-[#070a0f] px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-cyan-600"
+                      className="mt-1 w-full rounded-md border border-line bg-page px-2 py-1.5 text-xs text-fg outline-none focus:border-accent"
                     >
                       {models.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -298,7 +298,7 @@ export function SettingsPanel({
               </div>
             )}
 
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
+            <p className="mt-3 text-xs leading-relaxed text-fg2">
               A key in browser storage is readable by any script on this origin. That is acceptable
               for a key scoped to the Generative Language API and nothing else; it is not
               acceptable for one with broader Google Cloud permissions.

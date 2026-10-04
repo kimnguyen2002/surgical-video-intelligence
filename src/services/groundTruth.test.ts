@@ -54,6 +54,10 @@ describe('bundled excerpts', () => {
    * The point of the selection algorithm: every excerpt must land somewhere
    * the release actually annotated. An excerpt over unlabelled footage shows
    * an empty ground-truth panel, which reads as a broken app.
+   *
+   * Instruments are required everywhere. A task is required only where the
+   * manifest says the window has one: some parts (case 003 part 2) carry no
+   * task labels anywhere in the release, and that is a fact about the data.
    */
   it('lands every excerpt on annotated footage', () => {
     for (const clip of SURGVU_CLIPS) {
@@ -61,8 +65,13 @@ describe('bundled excerpts', () => {
       const truth = truthAt(clip.caseId, clip.part, midpoint);
 
       expect(truth.provenance, `case ${clip.caseId}`).toBe('recorded');
-      expect(truth.task, `case ${clip.caseId} has a labelled task`).not.toBeNull();
-      expect(truth.tools.length, `case ${clip.caseId} has instruments`).toBeGreaterThan(0);
+      if (clip.tasks.length > 0) {
+        expect(truth.task, `case ${clip.caseId} part ${clip.part} has a labelled task`).not.toBeNull();
+      }
+      expect(
+        truth.tools.length,
+        `case ${clip.caseId} part ${clip.part} has instruments`
+      ).toBeGreaterThan(0);
     }
   });
 
@@ -70,7 +79,11 @@ describe('bundled excerpts', () => {
     for (const clip of SURGVU_CLIPS) {
       const midpoint = clip.sourceStartSeconds + clip.durationSeconds / 2;
       const task = taskAt(clip.caseId, clip.part, midpoint);
-      expect(clip.tasks).toContain(task!.display);
+      if (clip.tasks.length === 0) {
+        expect(task).toBeNull();
+      } else {
+        expect(clip.tasks).toContain(task!.display);
+      }
     }
   });
 

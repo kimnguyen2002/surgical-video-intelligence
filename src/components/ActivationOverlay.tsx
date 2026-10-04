@@ -1,18 +1,16 @@
 /**
  * The class activation heatmap, drawn over the video.
  *
- * The map arrives as a 7x7 grid — that is the spatial resolution the backbone
- * actually has at its last stage, after five downsampling steps from 224px.
- * Presenting it larger than it is would be dishonest about the precision of
- * the explanation, so the grid is drawn at its true size onto a 7x7 canvas and
- * the browser's own bilinear filter scales it up. The blur is the data's, not
- * an effect added on top of it.
+ * The worker stitches three overlapping classifier crops into one map that
+ * spans the full width of the frame, so the overlay is positioned by `region`
+ * and covers the picture rather than a square in its middle. The map is
+ * evidence for one class (the strongest one the classifier found), shown on a
+ * single colour scale that fades in with evidence: weak regions stay clear,
+ * strong ones run from cyan through yellow to red.
  *
- * It is positioned by `region` rather than stretched across the frame. The
- * classifier sees a centre crop, so a map drawn edge to edge would place the
- * hot region away from the pixels that actually produced it — wrong in a way
- * that still looks plausible, which is the worst failure mode an
- * explainability overlay can have.
+ * The backbone's grid is coarse, so the map is interpolated bilinearly up to a
+ * smooth image. That is display smoothing only; the values and the figure
+ * printed in the corner are untouched.
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -23,42 +21,56 @@ interface ActivationOverlayProps {
   opacity?: number;
 }
 
+/** How much larger than the source grid the canvas is drawn. */
+const UPSAMPLE = 5;
+
+const STOPS: [number, number, number, number][] = [
+  [0.0, 0, 170, 235],
+  [0.35, 70, 220, 120],
+  [0.65, 250, 215, 40],
+  [1.0, 235, 45, 40],
+];
+
+/** Below this the map is fully transparent, so the video stays clear. */
+const FADE_START = 0.3;
+/** Above this the colour is at full strength. */
+const FADE_END = 0.75;
+
 /**
- * Transparent → cyan → amber → red, with the cold half discarded.
- *
- * Two choices here are about legibility rather than taste, and the first pass
- * got both wrong:
- *
- * **The cutoff is 0.35, not 0.15.** A CAM is normalised by its own maximum, so
- * a diffuse map stays diffuse: over half the grid sat above 0.15 and the
- * overlay tinted most of the frame, which communicates nothing. Showing only
- * the top two-thirds of the range is what makes "where" a readable answer.
- *
- * **Contrast is raised by a gamma.** `t ** 1.6` pushes the middle of the range
- * down, so the peak stands out against the shoulder instead of blending into
- * it. This changes the *appearance* of the map, never the values — the figure
- * printed in the corner and the underlying data are untouched.
+ * Colour for a normalised value. Weak evidence is invisible and the colour
+ * fades in smoothly from FADE_START, so only the regions the classifier
+ * actually relied on are tinted. The fade is smooth (no hard edge), and it
+ * changes only what is drawn: the values are untouched.
  */
 function colorFor(value: number): [number, number, number, number] {
-  const CUTOFF = 0.35;
-  if (value <= CUTOFF) return [0, 0, 0, 0];
+  const t = Math.min(1, Math.max(0, value));
+  if (t <= FADE_START) return [0, 0, 0, 0];
+  let i = 0;
+  while (i < STOPS.length - 2 && t > STOPS[i + 1][0]) i++;
+  const [t0, r0, g0, b0] = STOPS[i];
+  const [t1, r1, g1, b1] = STOPS[i + 1];
+  const u = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+  const x = Math.min(1, (t - FADE_START) / (FADE_END - FADE_START));
+  const alpha = Math.round(235 * x * x * (3 - 2 * x));
+  return [r0 + (r1 - r0) * u, g0 + (g1 - g0) * u, b0 + (b1 - b0) * u, alpha];
+}
 
-  const t = Math.pow((value - CUTOFF) / (1 - CUTOFF), 1.6);
-  const alpha = Math.round(60 + t * 170);
-
-  if (t < 0.5) {
-    // cyan -> amber
-    const u = t / 0.5;
-    return [
-      Math.round(34 + u * (251 - 34)),
-      Math.round(211 - u * (211 - 191)),
-      Math.round(238 - u * (238 - 36)),
-      alpha,
-    ];
-  }
-  // amber -> red
-  const u = (t - 0.5) / 0.5;
-  return [251, Math.round(191 - u * 123), Math.round(36 + u * 32), alpha];
+function sample(map: ActivationMap, x: number, y: number): number {
+  const fx = Math.min(map.width - 1, Math.max(0, x));
+  const fy = Math.min(map.height - 1, Math.max(0, y));
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const x1 = Math.min(map.width - 1, x0 + 1);
+  const y1 = Math.min(map.height - 1, y0 + 1);
+  const ax = fx - x0;
+  const ay = fy - y0;
+  const v = map.values;
+  return (
+    v[y0 * map.width + x0] * (1 - ax) * (1 - ay) +
+    v[y0 * map.width + x1] * ax * (1 - ay) +
+    v[y1 * map.width + x0] * (1 - ax) * ay +
+    v[y1 * map.width + x1] * ax * ay
+  );
 }
 
 export const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ map, opacity = 0.8 }) => {
@@ -68,19 +80,25 @@ export const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ map, opaci
     const canvas = canvasRef.current;
     if (!canvas || !map) return;
 
-    canvas.width = map.width;
-    canvas.height = map.height;
+    const w = map.width * UPSAMPLE;
+    const h = map.height * UPSAMPLE;
+    canvas.width = w;
+    canvas.height = h;
 
     const context = canvas.getContext('2d');
     if (!context) return;
 
-    const image = context.createImageData(map.width, map.height);
-    for (let i = 0; i < map.values.length; i++) {
-      const [r, g, b, a] = colorFor(map.values[i]);
-      image.data[i * 4] = r;
-      image.data[i * 4 + 1] = g;
-      image.data[i * 4 + 2] = b;
-      image.data[i * 4 + 3] = a;
+    const image = context.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const value = sample(map, (x + 0.5) / UPSAMPLE - 0.5, (y + 0.5) / UPSAMPLE - 0.5);
+        const [r, g, b, a] = colorFor(value);
+        const i = (y * w + x) * 4;
+        image.data[i] = r;
+        image.data[i + 1] = g;
+        image.data[i + 2] = b;
+        image.data[i + 3] = a;
+      }
     }
     context.putImageData(image, 0, 0);
   }, [map]);
@@ -98,16 +116,25 @@ export const ActivationOverlay: React.FC<ActivationOverlayProps> = ({ map, opaci
           width: `${map.region.width * 100}%`,
           height: `${map.region.height * 100}%`,
           opacity,
-          // Let the browser scale 7x7 smoothly; `pixelated` would imply the
-          // model reasons in blocks, which it does not.
           imageRendering: 'auto',
         }}
       />
-      {/* Top-left, under the recorded badge: the bottom of the stage belongs
-          to the player's own controls, and a label there sat on top of them. */}
-      <div className="absolute top-11 left-2.5 rounded border border-slate-700/80 bg-black/80 px-2 py-1 font-mono text-[10px] text-slate-300 backdrop-blur-sm">
-        <span className="text-amber-300">CAM</span> · {map.label.replace(/_/g, ' ')} ·{' '}
-        {map.confidence}% · {map.width}&times;{map.height}
+      <div className="absolute top-11 left-2.5 rounded border border-white/20 bg-black/80 px-2.5 py-1.5 text-[11px] text-slate-200 backdrop-blur-sm">
+        <div className="font-mono">
+          <span className="text-amber-300">CAM</span> · {map.label.replace(/_/g, ' ')} ·{' '}
+          {map.confidence}%
+        </div>
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span>weak</span>
+          <span
+            className="h-1.5 w-20 rounded-full"
+            style={{
+              background:
+                'linear-gradient(to right, rgba(0,170,235,0), rgb(0,170,235), rgb(70,220,120), rgb(250,215,40), rgb(235,45,40))',
+            }}
+          />
+          <span>strong evidence</span>
+        </div>
       </div>
     </div>
   );

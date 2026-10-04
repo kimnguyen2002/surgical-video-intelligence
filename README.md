@@ -117,7 +117,7 @@ money in two separate ways and both are now gone.
 | | Before | Now |
 |---|---|---|
 | **Per-frame analysis** | One Gemini call per frame. Twenty frames returned `RESOURCE_EXHAUSTED 429`. | Three ONNX graphs in a worker. ~35 ms/frame. No quota to exhaust. |
-| **Video delivery** | 8.9 GB streamed from a Cloud Storage bucket — egress billed per visitor, growing with exactly the attention the project was published to attract. | 33.6 MB of excerpts served as static files, plus local-folder attachment for the full release. |
+| **Video delivery** | 8.9 GB streamed from a Cloud Storage bucket — egress billed per visitor, growing with exactly the attention the project was published to attract. | 78 MB of excerpts (one two-minute clip per part) served as static files, plus local-folder attachment for the full release. |
 | **Assistant** | Server-held API key, every visitor spending the author's quota. | Deterministic grounded answerer in the browser. Optional: the visitor supplies **their own** key. |
 | **Hosting** | Node process holding a secret. | A directory of static files. |
 
@@ -184,14 +184,14 @@ about the detector. The *On-device models* panel in the app prints each
 checkpoint's own provenance note next to its score, so the caveat travels with
 the number instead of living only here.
 
-Measured over 150 frames sampled evenly across the six bundled excerpts
+Measured over 225 frames sampled evenly across the nine bundled excerpts
 (`npm run bench:clips`), at Ultralytics' default 0.25 threshold:
 
 | | |
 |---|---|
-| Frames with at least one box | **79%** |
-| Boxes per frame | **1.23** |
-| Mean confidence | **0.61** |
+| Frames with at least one box | **81%** |
+| Boxes per frame | **1.36** |
+| Mean confidence | **0.62** |
 | Distinct classes predicted | **6 of 14** |
 
 So roughly one frame in five gets no box at all. That is the checkpoint
@@ -236,11 +236,14 @@ decomposition is exact, and `scripts/export_cam.py` checks it: summing the CAM
 over space reconstructs the model's own logits to **2.9 × 10⁻⁴**, which is
 float32 rounding.
 
-The map is 7×7 — the backbone's true spatial resolution at its last stage —
-and it is drawn at that size and scaled up, rather than smoothed to imply a
-precision it does not have. It is positioned over the classifier's **centre
-crop**, not the whole frame, because that is the only region the classifier
-saw.
+One crop only sees the middle of a wide frame, so the classifier is run on
+three overlapping square crops (left, centre, right) and the three maps are
+stitched, with feathered overlaps, into one map that spans the full width of
+the frame. Each crop's map is 7×7 — the backbone's true spatial resolution at
+its last stage — so the stitched map is coarse and is interpolated for display
+only. Vertically the map covers the ~88% of the height the crop can see. The
+prediction itself still comes from the centre crop alone, as trained; the two
+extra passes exist only to explain where in the frame the evidence is.
 
 ### Measured latency
 
@@ -282,7 +285,7 @@ repository.** What is here:
 | | Bundled | Not bundled |
 |---|---|---|
 | Annotations | 259 instrument intervals and 43 task intervals across 6 cases / 9 parts (24.4 h of footage), covering 13 of 14 instrument classes and 7 of 8 task classes | the other 149 cases |
-| Video | 6 excerpts, 75 s each, 33.6 MB total | 8.9 GB of full parts |
+| Video | 9 excerpts (one per part), 120 s each, 78 MB total | 8.9 GB of full parts |
 
 ### How the excerpts were chosen
 
@@ -295,8 +298,10 @@ rather than an accurate one.
 So `scripts/build_clips.py` scores every candidate window by how much
 *labelled* activity it contains — distinct instruments, distinct tasks,
 instrument changes inside the window, and the fraction of the window with any
-task annotated — and takes the best. All six land at **100% task coverage**
-with four to seven instruments each.
+task annotated — and takes the best. Seven of the nine land at **100% task coverage**
+with four to seven instruments each. The other two (case 003 part 2 and
+case 004 part 2) are cut from parts the release labels for instruments only,
+so their task panel is empty by design.
 
 ### The timestamp trap
 
@@ -402,11 +407,13 @@ src/
     localVision.ts      worker client: one frame in flight, newest wins
     groundTruth.ts      binary-searched annotation lookup
     byokGemini.ts       the visitor's own key, never ours
-    voice.ts            Web Speech API, in and out
+    voice.ts            speech out (speechSynthesis) and on-device dictation
+    speechFeatures.ts   Whisper log-mel front end and tokenizer
   components/
-    ActivationOverlay.tsx  the CAM heatmap, positioned over the centre crop
+    ActivationOverlay.tsx  the full-frame CAM heatmap
   workers/
     vision.worker.ts    ONNX sessions, pre/post-processing, NMS, CAM, domain guard
+    speech.worker.ts    on-device Whisper transcription for the microphone
   data/                 generated: cases, labels, clips, vocabulary
 ml/
   ai/training/          the PyTorch pipeline the checkpoints came from
@@ -444,9 +451,11 @@ Stated here rather than discovered later:
   in the data the presence and detection checkpoints were fitted to.
 - **The detector has no published held-out metric.** Treat its boxes as a
   demonstration of the pipeline.
-- **Speech recognition is browser-dependent.** Chrome, Edge and Safari have it;
-  Firefox does not. The microphone is not offered where it is unsupported,
-  rather than offered and silently inert.
+- **Speech recognition is a small model.** Voice questions are transcribed on
+  the device by Whisper tiny.en (int8 ONNX, ~40 MB, downloaded on first use),
+  not by the browser's recogniser, which in Chrome streams audio to a Google
+  service. It is English-only and can mishear uncommon instrument names;
+  the transcript is shown as the question, so a mishearing is visible.
 - **WebGPU is attempted first and falls back to WASM**, so the reported backend
   varies by machine. The toolbar says which one took the job.
 

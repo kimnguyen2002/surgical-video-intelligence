@@ -93,12 +93,12 @@ export function taskDisplay(label: string): string {
 export const ARM_ORDER = ['USM1', 'USM2', 'USM3', 'USM4'] as const;
 
 export const ARM_COLORS: Record<string, { bar: string; text: string; dot: string }> = {
-  USM1: { bar: 'bg-emerald-500/80', text: 'text-emerald-300', dot: '#10b981' },
-  USM2: { bar: 'bg-sky-500/80', text: 'text-sky-300', dot: '#0ea5e9' },
-  USM3: { bar: 'bg-violet-500/80', text: 'text-violet-300', dot: '#8b5cf6' },
-  USM4: { bar: 'bg-orange-500/80', text: 'text-orange-300', dot: '#f97316' },
+  USM1: { bar: 'bg-emerald-500/80', text: 'text-emerald-700 dark:text-emerald-300', dot: '#10b981' },
+  USM2: { bar: 'bg-sky-500/80', text: 'text-sky-700 dark:text-sky-300', dot: '#0ea5e9' },
+  USM3: { bar: 'bg-violet-500/80', text: 'text-violet-700 dark:text-violet-300', dot: '#8b5cf6' },
+  USM4: { bar: 'bg-orange-500/80', text: 'text-orange-700 dark:text-orange-300', dot: '#f97316' },
 };
 
 export function armColor(arm: string) {
-  return ARM_COLORS[arm] || { bar: 'bg-slate-500/80', text: 'text-slate-300', dot: '#64748b' };
+  return ARM_COLORS[arm] || { bar: 'bg-slate-500/80', text: 'text-fg2', dot: '#64748b' };
 }

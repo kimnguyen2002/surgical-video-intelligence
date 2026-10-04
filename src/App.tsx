@@ -19,6 +19,7 @@ import { ApiStatusBanner } from './components/ApiStatusBanner';
 import { ModelPanel } from './components/ModelPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { GuidedTour, tourSeen, type TourPhase } from './components/GuidedTour';
+import { ThemeToggle } from './components/ThemeToggle';
 import { ask, type TimelineEvent, type VideoFacts } from './assistant';
 import { apiKey, checkKey, GeminiError, listModels, preferredModel } from './services/byokGemini';
 import { LocalVision, LocalVisionResult } from './services/localVision';
@@ -415,8 +416,8 @@ export default function App() {
    *
    * 1. A **local file** the visitor attached — the real, full part, read off
    *    their disk with nothing uploaded.
-   * 2. The **bundled excerpt** — 75 seconds cut from the most label-dense
-   *    window of the case, shipped with the app.
+   * 2. The **bundled excerpt** — two minutes cut from the most label-dense
+   *    window of that part, shipped with the app.
    * 3. A **remote store**, only if someone configured one for a private
    *    deployment.
    */
@@ -426,20 +427,20 @@ export default function App() {
       loadLibraryPart(caseId, part, file);
       return;
     }
-    if (loadBundledExcerpt(caseId)) return;
+    if (loadBundledExcerpt(caseId, part)) return;
     loadRemotePart(caseId, part);
   };
 
   /**
-   * Load the excerpt bundled for this case.
+   * Load the excerpt bundled for this part.
    *
    * Returns false when there is none, so the caller can fall through. The
    * excerpt's `sourceStartSeconds` goes into `timeOffset`, which is what keeps
    * every annotation lookup pointed at the moment in the *original* recording
    * that the viewer is actually watching.
    */
-  const loadBundledExcerpt = (caseId: string): boolean => {
-    const clip = clipFor(caseId);
+  const loadBundledExcerpt = (caseId: string, part: number): boolean => {
+    const clip = clipFor(caseId, part);
     if (!clip) return false;
     if (state.activeCaseId === caseId && state.activePart === clip.part && state.isExcerpt) {
       return true;
@@ -943,7 +944,11 @@ export default function App() {
 
   useEffect(() => {
     const local = visionRef.current!;
-    local.onResult = handleVisionResult;
+    local.onResult = (result) => {
+      // A frame got through, so any earlier capture error is no longer true.
+      setVision((v) => (v.error ? { ...v, error: null } : v));
+      handleVisionResult(result);
+    };
     local.onError = (message) => setVision((v) => ({ ...v, error: message }));
     return () => {
       local.onResult = null;
@@ -974,7 +979,7 @@ export default function App() {
     const pump = () => {
       if (cancelled) return;
       const el = videoElement();
-      if (el && el.readyState >= 2) {
+      if (el && el.readyState >= 2 && !el.seeking) {
         const t = el.currentTime;
         if (!el.paused || t !== lastSubmittedTime) {
           lastSubmittedTime = t;
@@ -1103,56 +1108,62 @@ export default function App() {
    * origin, where the browser recogniser works — and it costs nothing, needs
    * no key, and sends no audio to an API the visitor is paying for.
    */
+  const [micStatus, setMicStatus] = useState<string | null>(null);
+
+  const pushSystem = (text: string) =>
+    setState((prev) => ({
+      ...prev,
+      chatMessages: [
+        ...prev.chatMessages,
+        { id: `mic-${Date.now()}`, sender: 'system', text, timestamp: nowStamp() },
+      ],
+    }));
+
+  /**
+   * Push to talk, transcribed on this machine.
+   *
+   * First press records; recording ends on its own after a short silence, or
+   * on a second press. The transcript is sent as a question.
+   */
   const handleToggleMic = () => {
     if (state.isMicListening) {
-      dictation.stop();
-      setState((prev) => ({ ...prev, isMicListening: false }));
+      void dictation.finish();
       return;
     }
 
     if (!recognitionSupported()) {
-      setState((prev) => ({
-        ...prev,
-        chatMessages: [
-          ...prev.chatMessages,
-          {
-            id: `mic-${Date.now()}`,
-            sender: 'system',
-            text: 'This browser has no speech recognition. Chrome, Edge and Safari support it; Firefox does not. Type the question instead.',
-            timestamp: nowStamp(),
-          },
-        ],
-      }));
+      pushSystem('This browser cannot record audio. Type the question instead.');
       return;
     }
 
-    setState((prev) => ({ ...prev, isMicStarting: true }));
-    dictation.start({
+    const done = () => {
+      setMicStatus(null);
+      setState((prev) => ({ ...prev, isMicListening: false, isMicStarting: false }));
+    };
+
+    void dictation.start({
+      onStatus: (status) => {
+        if (status === 'loading') {
+          setMicStatus('Finishing the speech model download (about 40 MB, first time only)…');
+          setState((prev) => ({ ...prev, isMicStarting: true }));
+        } else if (status === 'listening') {
+          setMicStatus('Listening… ask your question. It stops when you pause.');
+          setState((prev) => ({ ...prev, isMicStarting: false, isMicListening: true }));
+        } else {
+          setMicStatus('Transcribing on this device…');
+          setState((prev) => ({ ...prev, isMicListening: false, isMicStarting: true }));
+        }
+      },
       onFinal: (transcript) => {
-        setState((prev) => ({ ...prev, isMicListening: false, isMicStarting: false }));
-        if (transcript.trim()) void handleSendMessage(transcript.trim());
+        done();
+        void handleSendMessage(transcript);
       },
       onError: (failure) => {
-        setState((prev) => ({
-          ...prev,
-          isMicListening: false,
-          isMicStarting: false,
-          chatMessages: [
-            ...prev.chatMessages,
-            {
-              id: `mic-${Date.now()}`,
-              sender: 'system',
-              text: `${failure.message}${failure.hint ? `\n\n${failure.hint}` : ''}`,
-              timestamp: nowStamp(),
-            },
-          ],
-        }));
+        done();
+        pushSystem(`${failure.message}${failure.hint ? `\n\n${failure.hint}` : ''}`);
       },
-      onEnd: () => {
-        setState((prev) => ({ ...prev, isMicListening: false, isMicStarting: false }));
-      },
+      onEnd: done,
     });
-    setState((prev) => ({ ...prev, isMicStarting: false, isMicListening: true }));
   };
 
   /**
@@ -1164,61 +1175,62 @@ export default function App() {
   const showBanner = !state.bannerDismissed && apiKey.configured;
 
   return (
-    <div className="min-h-screen bg-[#070a0f] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-page text-fg flex flex-col font-sans selection:bg-accent selection:text-on-accent">
       {/* TOP HEADER */}
-      <header className="px-5 py-3 bg-[#0a0e14] border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40">
+      <header className="px-5 py-3 bg-page border-b border-line flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-            <Stethoscope className="w-5 h-5" />
-          </div>
-
-          <div>
-            <h1 className="text-base font-bold tracking-tight text-slate-100">
+          <a href="#/" className="flex items-center gap-3" title="Back to the overview">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-card text-accent">
+              <Stethoscope className="h-[18px] w-[18px]" />
+            </span>
+            <span className="text-[12px] font-bold uppercase tracking-[0.22em] text-fg">
               Surgical Video Intelligence
-            </h1>
-            <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-              <span>{vision.ready ? vision.backend : 'on-device'}</span>
-              <span>·</span>
-              <span>SurgVU 2024</span>
-              <span>·</span>
-              <span>
-                {attachedFiles.size > 0
-                  ? `${attachedFiles.size} parts attached`
-                  : 'no parts attached'}
-              </span>
-            </p>
-          </div>
+            </span>
+          </a>
+          <p className="hidden md:flex text-xs text-fg3 items-center gap-1.5">
+            <span>{vision.ready ? vision.backend : 'on-device'}</span>
+            <span>·</span>
+            <span>SurgVU 2024</span>
+            <span>·</span>
+            <span>
+              {attachedFiles.size > 0
+                ? `${attachedFiles.size} parts attached`
+                : 'no parts attached'}
+            </span>
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* About — the project, the dataset it plays, and the checkpoints it runs. */}
           <button
             onClick={() => setTourPhase('steps')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-cyan-300 bg-[#121924] hover:bg-slate-800 border border-slate-700/80 rounded-md transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fg2 hover:text-accent bg-inset hover:bg-hover border border-line rounded-md transition-colors shadow-sm"
           >
-            <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+            <HelpCircle className="w-3.5 h-3.5 text-fg2" />
             <span>Guide</span>
           </button>
 
           <a
             data-tour="about"
-            href="#/about"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-cyan-300 bg-[#121924] hover:bg-slate-800 border border-slate-700/80 rounded-md transition-colors shadow-sm"
+            href="#/"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fg2 hover:text-accent bg-inset hover:bg-hover border border-line rounded-md transition-colors shadow-sm"
           >
-            <Info className="w-3.5 h-3.5 text-slate-400" />
-            <span>About</span>
+            <Info className="w-3.5 h-3.5 text-fg2" />
+            <span>Overview</span>
           </a>
+
+          <ThemeToggle />
 
           {/* Settings — audience, and the optional bring-your-own-key model. */}
           <button
             data-tour="settings"
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-200 bg-[#121924] hover:bg-slate-800 border border-slate-700/80 rounded-md transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fg bg-inset hover:bg-hover border border-line rounded-md transition-colors shadow-sm"
           >
-            <SettingsIcon className="w-3.5 h-3.5 text-slate-400" />
+            <SettingsIcon className="w-3.5 h-3.5 text-fg2" />
             <span>{state.role}</span>
             {state.useGenerative && apiKey.configured && (
-              <span className="flex items-center gap-1 text-cyan-400">
+              <span className="flex items-center gap-1 text-accent">
                 <Sparkles className="w-3 h-3" />
               </span>
             )}
@@ -1302,7 +1314,7 @@ export default function App() {
               caseId={state.activeCaseId}
               part={state.activePart}
               // The *part's* duration, from the probed manifest. `state.duration`
-              // is the element's, which for an excerpt is 75 s — every interval
+              // is the element's, which for an excerpt is two minutes — every interval
               // in the case would then fall outside the ribbon's range and it
               // would render empty.
               durationSeconds={
@@ -1358,6 +1370,7 @@ export default function App() {
             isTtsEnabled={state.isTtsEnabled}
             isMicListening={state.isMicListening}
             isMicStarting={state.isMicStarting}
+            micStatus={micStatus}
             isThinking={state.isAssistantThinking}
             onSendMessage={handleSendMessage}
             onToggleTts={handleToggleTts}
@@ -1368,12 +1381,12 @@ export default function App() {
 
       <GuidedTour phase={tourPhase} onPhaseChange={setTourPhase} />
 
-      <footer className="px-5 py-2.5 text-[10px] text-slate-600 border-t border-slate-900 text-center">
-        Recorded labels from the SurgVU 2024 release · predictions from Gemini, always shown with a
+      <footer className="px-5 py-2.5 text-[11px] text-fg2 border-t border-line text-center">
+        Recorded labels from the SurgVU 2024 release · predictions from on-device models, always shown with a
         confidence · educational and research use only, not a medical device.
         {state.duration > 0 && ` · part length ${formatClock(state.duration)}`}
         {' · '}
-        <a href="#/about" className="text-slate-500 hover:text-cyan-400 underline underline-offset-2 transition-colors">
+        <a href="#/" className="text-fg3 hover:text-accent underline underline-offset-2 transition-colors">
           about this project
         </a>
       </footer>

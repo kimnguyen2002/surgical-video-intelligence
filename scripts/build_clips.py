@@ -49,8 +49,9 @@ VIDEO_ROOTS = [
 ]
 
 #: Long enough to show a task boundary or an instrument change, short enough
-#: that six of them stay inside a repository people will actually clone.
-CLIP_SECONDS = 75
+#: that nine of them (one per part) stay inside a repository people will
+#: actually clone.
+CLIP_SECONDS = 120
 
 #: Candidate windows are tried on this grid. Finer than the clip length so a
 #: window can straddle an interesting boundary rather than landing beside it.
@@ -274,22 +275,21 @@ def main() -> int:
     tools, tasks = load_intervals()
     parts = load_parts()
 
-    # One clip per case: the best-scoring window across all of that case's parts.
-    by_case: dict[str, tuple] = {}
+    # One clip per part: the best-scoring window within that part, so every
+    # part in the library is playable and none is left as an empty row.
+    chosen = []
     for part in parts:
         picked = pick_window(part, tools, tasks)
         if picked is None:
             continue
         score, start, detail = picked
-        current = by_case.get(part["caseId"])
-        if current is None or score > current[0]:
-            by_case[part["caseId"]] = (score, start, detail, part)
+        chosen.append((score, start, detail, part))
 
     manifest = []
-    for case_id in sorted(by_case):
-        score, start, detail, part = by_case[case_id]
+    for score, start, detail, part in sorted(chosen, key=lambda c: (c[3]["caseId"], c[3]["part"])):
+        case_id = part["caseId"]
         source = find_video(part)
-        name = f"case_{case_id}_excerpt.mp4"
+        name = f"case_{case_id}_part_{part['part']:03d}_excerpt.mp4"
         dest = OUT_DIR / name
 
         print(f"case_{case_id}  part {part['part']}  t={start:7.1f}s  score={score:5.1f}  "

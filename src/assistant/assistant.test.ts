@@ -14,6 +14,7 @@ import { answerFromFacts } from './grounded';
 import { composeFromPassages } from './extractive';
 import { emptyFacts, hasAnyFacts, hms, join, type VideoFacts } from './facts';
 import { retrieve } from './retrieval';
+import { converse, notTrainedFor } from './conversation';
 import type { FrameTruth } from '../services/groundTruth';
 
 // ---------------------------------------------------------------------------
@@ -269,5 +270,121 @@ describe('formatting helpers', () => {
     expect(join(['a', 'b'])).toBe('a and b');
     expect(join(['a', 'b', 'c'])).toBe('a, b and c');
     expect(join([])).toBe('');
+  });
+});
+
+describe('conversation', () => {
+  const none = emptyFacts();
+
+  it('answers greetings and small talk without a key', () => {
+    for (const q of ['Hi', 'hello!', 'Hey there', 'good morning']) {
+      expect(converse(q, none)?.kind, q).toBe('greeting');
+    }
+    expect(converse('thanks!', none)?.kind).toBe('thanks');
+    expect(converse('how are you?', none)?.kind).toBe('wellbeing');
+    expect(converse('bye', none)?.kind).toBe('farewell');
+  });
+
+  it('mentions the loaded clip when greeting', () => {
+    const reply = converse('hi', factsWithTruth());
+    expect(reply!.text).toContain('case 001');
+  });
+
+  it('explains what the tool is for and how to start', () => {
+    expect(converse('What is this tool used for?', none)?.kind).toBe('about');
+    expect(converse('what can you do', none)?.kind).toBe('about');
+    expect(converse('How do I use this?', none)?.kind).toBe('howto');
+    expect(converse('who built this?', none)?.kind).toBe('author');
+    expect(converse('is my video uploaded?', none)?.kind).toBe('privacy');
+    expect(converse('how accurate is the detector?', none)?.kind).toBe('accuracy');
+  });
+
+  it('defines instruments and tasks', () => {
+    const driver = converse('What is a needle driver used for?', none);
+    expect(driver?.kind).toBe('definition');
+    expect(driver!.text).toContain('Needle driver');
+    expect(converse('what does the grasping retractor do', none)!.text).toContain('Grasping retractor');
+    expect(converse('explain range of motion', none)!.text).toContain('Range of motion');
+  });
+
+  it('leaves questions about the current video to the grounded path', () => {
+    expect(converse('Is the needle driver installed right now?', none)).toBeNull();
+    expect(converse('What instruments are installed right now?', none)).toBeNull();
+    expect(converse('Hi, what task is this?', none)).toBeNull();
+  });
+
+  it('declines patient-specific, medication and treatment questions', () => {
+    for (const q of [
+      'What dose of morphine should I give after surgery?',
+      'My mother has pain after her gallbladder operation, is that normal?',
+      'Should I get surgery for my hernia?',
+      'I have a fever and my incision is red',
+      'How do I perform a cholecystectomy?',
+      'what is the prognosis for this?',
+    ]) {
+      const reply = converse(q, none);
+      expect(reply?.kind, q).toBe('clinical_advice');
+      expect(reply!.refusal).toBe(true);
+    }
+  });
+
+  it('points emergencies to emergency services', () => {
+    const reply = converse('someone is bleeding heavily, what do I do', none);
+    expect(reply?.kind).toBe('emergency');
+    expect(reply!.text).toMatch(/emergency number/);
+  });
+
+  it('does not refuse ordinary educational questions', () => {
+    expect(converse('I feel confused about the heatmap', none)?.refusal ?? false).toBe(false);
+    expect(converse('what is the critical view of safety?', none)).toBeNull();
+  });
+
+  it('does not answer an off-topic question with the current task', () => {
+    expect(answerFromFacts("what's the weather in Taipei?", factsWithTruth())).toBeNull();
+    expect(answerFromFacts('tell me a joke', factsWithTruth())).toBeNull();
+  });
+
+  it('says it is not trained for unanswerable questions instead of guessing', () => {
+    const text = notTrainedFor(false);
+    expect(text).toMatch(/not trained to answer/);
+    expect(text).toMatch(/clinician/);
+  });
+});
+
+describe('comparing predictions with the recording', () => {
+  it('routes "does the prediction match" to a comparison, not a list', () => {
+    expect(classifyIntent('Does the prediction match the recorded instruments?')).toBe('compare');
+    expect(classifyIntent('do the models agree with the dataset?')).toBe('compare');
+  });
+
+  it('gives a verdict and separates matches, extras and unseen instruments', () => {
+    const facts = factsWithTruth({
+      detections: [
+        { label: 'needle_driver', confidence: 82, box: { ymin: 0, xmin: 0, ymax: 10, xmax: 10 } },
+        { label: 'needle_driver', confidence: 38, box: { ymin: 0, xmin: 0, ymax: 10, xmax: 10 } },
+        { label: 'stapler', confidence: 40, box: { ymin: 0, xmin: 0, ymax: 10, xmax: 10 } },
+      ],
+    });
+    const text = answerFromFacts('Does the prediction match the recorded instruments?', facts)!.text;
+    expect(text).toMatch(/^\*\*Partly\.\*\*/);
+    expect(text).toContain('**Matches:** Needle driver (82%)');
+    expect(text).toContain('**Predicted but not recorded:** Stapler (40%)');
+    expect(text).toContain('**Recorded but not found:** Cadiere forceps');
+  });
+
+  it('says there is nothing to compare before the models have run', () => {
+    const text = answerFromFacts('does the prediction match?', factsWithTruth())!.text;
+    expect(text).toMatch(/nothing to compare yet/);
+  });
+
+  it('lists repeated detections of one instrument once', () => {
+    const facts = factsWithTruth({
+      detections: [
+        { label: 'needle_driver', confidence: 82, box: { ymin: 0, xmin: 0, ymax: 10, xmax: 10 } },
+        { label: 'needle_driver', confidence: 38, box: { ymin: 0, xmin: 0, ymax: 10, xmax: 10 } },
+      ],
+    });
+    const text = answerFromFacts('what instruments are on screen?', facts)!.text;
+    expect(text).toContain('Needle driver (2 boxes, best 82%)');
   });
 });

@@ -137,7 +137,7 @@ export interface ApiHealth {
  * without asking, whether they are looking at a dataset lookup, a quotation
  * from the knowledge base, or text a language model wrote.
  */
-export type AnswerSource = 'grounded' | 'extractive' | 'generative' | 'none';
+export type AnswerSource = 'builtin' | 'grounded' | 'extractive' | 'generative' | 'none';
 
 export interface ChatMessage {
   id: string;

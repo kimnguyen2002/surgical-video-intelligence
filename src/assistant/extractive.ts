@@ -156,37 +156,3 @@ export function composeFromPassages(
     generative: false,
   };
 }
-
-/**
- * What the assistant says when it has nothing.
- *
- * Phrased so the reader knows this is a deliberate refusal rather than a
- * failure, and told exactly what would change the answer.
- */
-export function cannotAnswer(byokConfigured: boolean): string {
-  const lines = [
-    'I could not find anything in the recorded annotations or the bundled ' +
-      'knowledge base that answers that.',
-    '',
-    'This demo runs entirely in your browser and has no language model connected, ' +
-      'so it reports only what has actually been indexed — it will not improvise ' +
-      'an answer.',
-    '',
-    'Things it *can* answer, from the dataset itself:',
-    '',
-    '- **"What instruments are installed right now?"** — from the robot\'s installation log',
-    '- **"What task is this?"** — from the annotated task intervals',
-    '- **"When does suturing happen?"** — from the whole-recording timeline',
-    '- **"Summarise this case"** — time spent per task and per instrument',
-  ];
-
-  if (!byokConfigured) {
-    lines.push(
-      '',
-      'For generated explanations, add your own Gemini API key under **Settings → ' +
-        'Language model**. It stays in your browser and is never sent anywhere but Google.'
-    );
-  }
-
-  return lines.join('\n');
-}

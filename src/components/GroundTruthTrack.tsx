@@ -15,7 +15,7 @@ interface GroundTruthTrackProps {
    *
    * The ribbon always draws the *whole* part, because that is the thing the
    * annotations describe — a five-hour operation with a stapler going in at
-   * 00:07:24. Drawing only the 75 seconds on screen would throw away the one
+   * 00:07:24. Drawing only the excerpt on screen would throw away the one
    * view that makes the dataset legible. What the window does is shade the
    * reachable region, so it is obvious that seeking outside it will not work.
    */
@@ -87,13 +87,13 @@ export const GroundTruthTrack: React.FC<GroundTruthTrackProps> = ({
   }
 
   return (
-    <div className="bg-[#0b1017] p-3.5 rounded-lg border border-slate-800/80 flex flex-col space-y-2.5">
+    <div className="bg-card p-3.5 rounded-lg border border-line flex flex-col space-y-2.5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          <Activity className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-fg">
+          <Activity className="w-3.5 h-3.5 text-ok" />
           <span>Recorded labels — case_{caseId} part {part}</span>
         </div>
-        <span className="text-[10px] text-emerald-400/80 border border-emerald-700/60 bg-emerald-950/40 rounded px-1.5 py-0.5">
+        <span className="text-[11px] text-ok border border-ok-line bg-ok-soft rounded px-1.5 py-0.5">
           dataset ground truth
         </span>
       </div>
@@ -105,7 +105,7 @@ export const GroundTruthTrack: React.FC<GroundTruthTrackProps> = ({
         */}
         {playableWindow && (
           <div
-            className="absolute inset-y-0 z-0 pointer-events-none border-x border-cyan-500/50 bg-cyan-400/10"
+            className="absolute inset-y-0 z-0 pointer-events-none border-x border-accent/40 bg-accent-soft"
             style={{
               left: pct(playableWindow.start),
               width: `${Math.max(0.4, ((playableWindow.end - playableWindow.start) / span) * 100)}%`,
@@ -117,9 +117,9 @@ export const GroundTruthTrack: React.FC<GroundTruthTrackProps> = ({
         {/* Task band */}
         {tasks.length > 0 && (
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-11 flex-shrink-0 text-[10px] font-mono text-slate-500">task</span>
+            <span className="w-11 flex-shrink-0 text-[11px] font-mono text-fg2">task</span>
             <div
-              className="relative flex-1 h-4 bg-[#0e141f] rounded border border-slate-800 cursor-pointer overflow-hidden"
+              className="relative flex-1 h-4 bg-card rounded border border-line cursor-pointer overflow-hidden"
               onClick={seekFromEvent}
               onMouseLeave={() => setHover(null)}
             >
@@ -148,13 +148,13 @@ export const GroundTruthTrack: React.FC<GroundTruthTrackProps> = ({
         {tracks.map((track) => (
           <div key={track.arm} className="flex items-center gap-2 mb-1">
             <span
-              className={`w-11 flex-shrink-0 text-[10px] font-mono ${track.color.text}`}
+              className={`w-11 flex-shrink-0 text-[11px] font-mono ${track.color.text}`}
               title={`Universal setup module ${track.arm.replace('USM', '')}`}
             >
               {track.arm}
             </span>
             <div
-              className="relative flex-1 h-3.5 bg-[#0e141f] rounded border border-slate-800 cursor-pointer overflow-hidden"
+              className="relative flex-1 h-3.5 bg-card rounded border border-line cursor-pointer overflow-hidden"
               onClick={seekFromEvent}
               onMouseLeave={() => setHover(null)}
             >
@@ -193,20 +193,20 @@ export const GroundTruthTrack: React.FC<GroundTruthTrackProps> = ({
           offset is subtracted from the span before the fraction is applied.
         */}
         <div
-          className="absolute top-0 bottom-0 w-px bg-cyan-400 pointer-events-none shadow-[0_0_6px_rgba(34,211,238,0.8)]"
+          className="absolute top-0 bottom-0 w-px bg-accent pointer-events-none"
           style={{ left: `calc(3.25rem + (100% - 3.25rem) * ${playheadPct / 100})` }}
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 -ml-[3px] -mt-0.5" />
+          <div className="w-1.5 h-1.5 rounded-full bg-accent -ml-[3px] -mt-0.5" />
         </div>
       </div>
 
       {hover && (
-        <div className="text-[10px] text-slate-300 font-mono bg-[#0e141f] border border-slate-800 rounded px-2 py-1 truncate">
+        <div className="text-[11px] text-fg2 font-mono bg-card border border-line rounded px-2 py-1 truncate">
           {hover.text}
         </div>
       )}
 
-      <p className="text-[10px] text-slate-500 leading-snug border-t border-slate-800/60 pt-1.5">
+      <p className="text-[11px] text-fg2 leading-snug border-t border-line pt-1.5">
         Tool presence comes from the robot's installation log, not from vision — an instrument is
         recorded as present while it is installed, including when it is off-screen or occluded.
       </p>

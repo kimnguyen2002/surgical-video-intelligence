@@ -56,17 +56,17 @@ export const LiveOverlay: React.FC<LiveOverlayProps> = ({
   if (result?.domain?.outOfDomain) {
     return (
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
-        <div className="max-w-sm rounded-lg border border-amber-600/70 bg-black/80 px-4 py-3 text-center shadow-2xl backdrop-blur-sm">
-          <div className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+        <div className="max-w-sm rounded-lg border border-amber-400/50 bg-black/80 px-4 py-3 text-center shadow-2xl backdrop-blur-sm">
+          <div className="text-xs font-semibold text-amber-300">
             Out of domain — no prediction
           </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-300">
             This frame is unlike anything the models were trained on, so they were not asked
             to judge it. A sigmoid classifier cannot say &ldquo;I have never seen this&rdquo; —
             pointed at a face it reported a needle driver at 98%. This is the guard that
             stops it.
           </p>
-          <div className="mt-1.5 font-mono text-[10px] text-slate-500">
+          <div className="mt-1.5 font-mono text-[11px] text-slate-300">
             cosine distance {result.domain.distance.toFixed(3)}
           </div>
         </div>

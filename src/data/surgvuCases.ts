@@ -47,7 +47,7 @@ export const SURGVU_VIDEO_ROOT = 'surgvu24_videos_only';
  *
  * The three ways to watch a case now, in the order the app tries them:
  *
- * 1. **Bundled excerpt** (`src/data/surgvuClips.ts`) — 75 seconds per case,
+ * 1. **Bundled excerpt** (`src/data/surgvuClips.ts`) — two minutes per part,
  *    33 MB in total, served as static files. Costs nothing and always works.
  * 2. **Attach a local folder** — the File System Access API binds the real
  *    files off the visitor's own disk. Nothing is uploaded and a five-hour

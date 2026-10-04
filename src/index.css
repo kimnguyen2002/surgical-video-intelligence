@@ -1,41 +1,197 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
-  
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
+/*
+ * Colour tokens. Components use the semantic names (bg-card, text-fg2,
+ * border-line, text-accent ...) and never a literal colour, so the light and
+ * dark themes are one set of variables rather than two stylesheets.
+ *
+ * Light is the default and the reference look: a pale cool-grey page, white
+ * cards with hairline borders, one blue accent. Dark keeps the same structure.
+ */
+:root,
+:root[data-theme="light"] {
+  --bg: #f2f5f9;
+  --bg-alt: #e8edf5;
+  --card: #ffffff;
+  --inset: #eef2f7;
+  --hover: #e4eaf2;
+  --line: #dde3ec;
+  --line-strong: #c5cfdc;
+  --fg: #0c1527;
+  --fg2: #3d5066;
+  --fg3: #7a8ca3;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-soft: #e0f2fe;
+  --on-accent: #ffffff;
+  --ok: #047857;
+  --ok-soft: #ecfdf5;
+  --ok-line: #a7e8cd;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --warn-line: #f6d58a;
+  --risk: #b91c1c;
+  --risk-soft: #fef2f2;
+  --risk-line: #f5b5b5;
+  --glow-a: rgba(2, 132, 199, 0.1);
+  --glow-b: rgba(244, 114, 182, 0.09);
+  --glow-c: rgba(16, 185, 129, 0.08);
+  --glow-d: rgba(129, 140, 248, 0.1);
+  --shadow: 0 1px 2px rgba(12, 21, 39, 0.04), 0 8px 24px rgba(12, 21, 39, 0.06);
+  color-scheme: light;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+:root[data-theme="dark"] {
+  --bg: #0a0f17;
+  --bg-alt: #0d131c;
+  --card: #111823;
+  --inset: #172030;
+  --hover: #1d2839;
+  --line: #243044;
+  --line-strong: #34435a;
+  --fg: #eef2f7;
+  --fg2: #a4b2c5;
+  --fg3: #74869c;
+  --accent: #4aa8e8;
+  --accent-hover: #6bb8ee;
+  --accent-soft: rgba(74, 168, 232, 0.12);
+  --on-accent: #06121f;
+  --ok: #4fd1a0;
+  --ok-soft: rgba(79, 209, 160, 0.1);
+  --ok-line: rgba(79, 209, 160, 0.3);
+  --warn: #f2bf5a;
+  --warn-soft: rgba(242, 191, 90, 0.1);
+  --warn-line: rgba(242, 191, 90, 0.32);
+  --risk: #f08585;
+  --risk-soft: rgba(240, 133, 133, 0.1);
+  --risk-line: rgba(240, 133, 133, 0.32);
+  --glow-a: rgba(74, 168, 232, 0.07);
+  --glow-b: rgba(244, 114, 182, 0.04);
+  --glow-c: rgba(79, 209, 160, 0.04);
+  --glow-d: rgba(129, 140, 248, 0.06);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
 }
-
-::-webkit-scrollbar-track {
-  background: #070a0f;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
 
 /*
- * Scroll reveal, used by the About page.
- *
- * The class is toggled by an IntersectionObserver rather than animated on
- * mount, so a section that is already on screen does not fade in twice, and a
- * reader who has asked for less motion gets none of it.
+ * The console keeps its original dark look: near-black surfaces, cyan accent,
+ * bright amber for model predictions. Only the dark theme is overridden, so the
+ * console's light theme still follows the home page.
+ */
+:root[data-theme="dark"][data-surface="console"] {
+  --bg: #070a0f;
+  --bg-alt: #0a0e14;
+  --card: #0b1017;
+  --inset: #121924;
+  --hover: #1b2535;
+  --line: #1e293b;
+  --line-strong: #334155;
+  --fg: #f1f5f9;
+  --fg2: #94a3b8;
+  --fg3: #64748b;
+  --accent: #22d3ee;
+  --accent-hover: #67e8f9;
+  --accent-soft: rgba(8, 51, 68, 0.6);
+  --on-accent: #00131a;
+  --ok: #6ee7b7;
+  --ok-soft: rgba(2, 44, 34, 0.6);
+  --ok-line: rgba(6, 95, 70, 0.7);
+  --warn: #fbbf24;
+  --warn-soft: rgba(69, 26, 3, 0.55);
+  --warn-line: rgba(217, 119, 6, 0.6);
+  --risk: #fca5a5;
+  --risk-soft: rgba(69, 10, 10, 0.55);
+  --risk-line: rgba(185, 28, 28, 0.6);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-page: var(--bg);
+  --color-alt: var(--bg-alt);
+  --color-card: var(--card);
+  --color-inset: var(--inset);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg2: var(--fg2);
+  --color-fg3: var(--fg3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-ok-line: var(--ok-line);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
+  --color-risk: var(--risk);
+  --color-risk-soft: var(--risk-soft);
+  --color-risk-line: var(--risk-line);
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  body {
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fg3);
+}
+
+/* Soft pastel light behind the hero and alternating sections. */
+.glow-field {
+  position: relative;
+  isolation: isolate;
+}
+.glow-field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(520px 360px at 12% 18%, var(--glow-a), transparent 70%),
+    radial-gradient(480px 340px at 88% 10%, var(--glow-d), transparent 70%),
+    radial-gradient(420px 320px at 22% 82%, var(--glow-b), transparent 70%),
+    radial-gradient(520px 360px at 80% 88%, var(--glow-c), transparent 70%);
+}
+
+.dot-grid {
+  background-image: radial-gradient(var(--line-strong) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/*
+ * Scroll reveal, toggled by an IntersectionObserver rather than animated on
+ * mount, so a section already on screen does not fade in twice and a reader
+ * who has asked for less motion gets none of it.
  */
 .reveal {
   opacity: 0;
@@ -45,7 +201,6 @@
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
-
 .reveal.is-visible {
   opacity: 1;
   transform: none;
@@ -57,7 +212,6 @@
     transform: none;
     transition: none;
   }
-
   html {
     scroll-behavior: auto;
   }

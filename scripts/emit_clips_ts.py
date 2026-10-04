@@ -25,7 +25,7 @@ HEADER = '''/**
  *
  * Produced by scripts/build_clips.py. Regenerate with: npm run build:clips
  *
- * One short excerpt per SurgVU case, bundled with the app so the player is not
+ * One short excerpt per SurgVU part, bundled with the app so the player is not
  * empty for a visitor who does not have the 8.9 GB release on disk. Each window
  * was chosen by how much *labelled* activity it contains rather than taken from
  * the start of the recording - see the module docstring in build_clips.py.
@@ -60,8 +60,8 @@ export const SURGVU_CLIPS: SurgvuClip[] = [
 
 FOOTER = '''];
 
-export function clipFor(caseId: string): SurgvuClip | undefined {
-  return SURGVU_CLIPS.find((c) => c.caseId === caseId);
+export function clipFor(caseId: string, part: number): SurgvuClip | undefined {
+  return SURGVU_CLIPS.find((c) => c.caseId === caseId && c.part === part);
 }
 
 /** Total bundled video, so the About page can state the real figure. */

@@ -210,14 +210,14 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
         aria-modal="true"
         aria-labelledby="tour-welcome-title"
       >
-        <div className="w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0d131c] p-6 shadow-2xl">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-500/50 bg-cyan-950/80 text-cyan-400">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6 shadow-2xl">
+          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-accent/40 bg-accent-soft text-accent">
             <Stethoscope className="h-6 w-6" />
           </div>
-          <h2 id="tour-welcome-title" className="text-lg font-bold text-slate-100">
+          <h2 id="tour-welcome-title" className="text-lg font-bold text-fg">
             New here? Take a 1-minute tour
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+          <p className="mt-2 text-sm leading-relaxed text-fg2">
             This page analyses robotic surgery video entirely in your browser. A short guided
             walkthrough will point out where to start: loading a clip, reading the results, and
             asking questions.
@@ -225,7 +225,7 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               onClick={close}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg2 transition-colors hover:bg-hover"
             >
               Skip, I'll explore
             </button>
@@ -235,7 +235,7 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
                 setIndex(0);
                 onPhaseChange('steps');
               }}
-              className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-cyan-400"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hover"
             >
               Show me around
             </button>
@@ -294,17 +294,17 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
 
       {target ? (
         <div
-          className="pointer-events-none absolute rounded-xl border-2 border-cyan-400/90 transition-all duration-300"
+          className="pointer-events-none absolute rounded-xl border-2 border-accent/40 transition-all duration-300"
           style={{
             left: target.x,
             top: target.y,
             width: target.w,
             height: target.h,
-            boxShadow: '0 0 0 9999px rgba(3, 6, 10, 0.78), 0 0 24px rgba(34, 211, 238, 0.45)',
+            boxShadow: '0 0 0 9999px rgba(8, 14, 24, 0.6)',
           }}
         />
       ) : (
-        <div className="pointer-events-none absolute inset-0 bg-[#03060a]/78" />
+        <div className="pointer-events-none absolute inset-0 bg-[#080e18]/60" />
       )}
 
       {arrow && (
@@ -318,7 +318,7 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
               refY="5"
               orient="auto"
             >
-              <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee" />
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
             </marker>
           </defs>
           <line
@@ -326,7 +326,7 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
             y1={arrow.y1}
             x2={arrow.x2}
             y2={arrow.y2}
-            stroke="#22d3ee"
+            stroke="var(--accent)"
             strokeWidth="2.5"
             strokeDasharray="7 5"
             strokeLinecap="round"
@@ -337,17 +337,17 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
 
       <div
         ref={cardRef}
-        className="absolute rounded-2xl border border-slate-600/80 bg-[#0d131c] shadow-2xl"
+        className="absolute rounded-2xl border border-line bg-card shadow-2xl"
         style={{ left: card.x, top: card.y, width: card.w }}
       >
         <div
-          className="flex cursor-grab touch-none select-none items-center justify-between rounded-t-2xl border-b border-slate-800 px-3 py-1.5 active:cursor-grabbing"
+          className="flex cursor-grab touch-none select-none items-center justify-between rounded-t-2xl border-b border-line px-3 py-1.5 active:cursor-grabbing"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-fg3">
             <GripHorizontal className="h-3.5 w-3.5" />
             Drag to move
           </span>
@@ -355,17 +355,17 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
             onPointerDown={(e) => e.stopPropagation()}
             onClick={close}
             aria-label="Close guide"
-            className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200"
+            className="rounded p-1 text-fg3 transition-colors hover:bg-hover hover:text-fg"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="px-4 pb-4 pt-3">
-          <h3 className="text-sm font-bold text-slate-100">{step.title}</h3>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-slate-400">{step.body}</p>
+          <h3 className="text-sm font-bold text-fg">{step.title}</h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-fg2">{step.body}</p>
           {!target && (
-            <p className="mt-2 text-[11px] text-cyan-400/80">
+            <p className="mt-2 text-[11px] text-accent">
               This part appears once a clip is loaded.
             </p>
           )}
@@ -376,7 +376,7 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
                 <span
                   key={s.target}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === index ? 'w-4 bg-cyan-400' : 'w-1.5 bg-slate-700'
+                    i === index ? 'w-4 bg-accent' : 'w-1.5 bg-inset'
                   }`}
                 />
               ))}
@@ -385,14 +385,14 @@ export function GuidedTour({ phase, onPhaseChange }: Props) {
               {index > 0 && (
                 <button
                   onClick={() => setIndex(index - 1)}
-                  className="flex items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                  className="flex items-center gap-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-fg2 transition-colors hover:bg-hover"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back
                 </button>
               )}
               <button
                 onClick={() => (last ? close() : setIndex(index + 1))}
-                className="flex items-center gap-1 rounded-md bg-cyan-500 px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-cyan-400"
+                className="flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-on-accent transition-colors hover:bg-accent-hover"
               >
                 {last ? 'Finish' : 'Next'}
                 {!last && <ArrowRight className="h-3.5 w-3.5" />}

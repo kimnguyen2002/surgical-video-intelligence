@@ -89,6 +89,12 @@ function at(facts: VideoFacts): string {
   return ts !== null ? `At **${hms(ts)}**` : 'Right now';
 }
 
+/** `at()` for the middle of a sentence. */
+function atLower(facts: VideoFacts): string {
+  const phrase = at(facts);
+  return phrase.startsWith('At') ? `at${phrase.slice(2)}` : 'right now';
+}
+
 /** Annotated spans starting within `window` seconds of now, nearest first. */
 function nearbyEvents(facts: VideoFacts, window = 120): TimelineEvent[] {
   if (facts.timestamp === null || facts.timeline.length === 0) return [];
@@ -110,9 +116,20 @@ function describeDetections(facts: VideoFacts): string | null {
   const parts: string[] = [];
 
   if (facts.detections.length > 0) {
-    const listed = facts.detections
+    // One entry per instrument: two boxes on the same class read as a stutter
+    // ("Needle driver (82%), Needle driver (38%)") rather than as information.
+    const byLabel = new Map<string, number[]>();
+    for (const d of facts.detections) {
+      byLabel.set(d.label, [...(byLabel.get(d.label) || []), d.confidence]);
+    }
+    const listed = [...byLabel]
+      .map(([label, confs]) => {
+        const best = Math.max(...confs);
+        return confs.length > 1
+          ? `${toolDisplay(label)} (${confs.length} boxes, best ${best}%)`
+          : `${toolDisplay(label)} (${best}%)`;
+      })
       .slice(0, 5)
-      .map((d) => `${toolDisplay(d.label)} (${d.confidence}%)`)
       .join(', ');
     parts.push(`The on-device detector locates: ${listed}.`);
   }
@@ -363,6 +380,77 @@ function answerRisk(facts: VideoFacts): string | null {
  * that to a plain statement that the app does not know — which is a better
  * answer than a fluent one with nothing behind it.
  */
+/**
+ * "Does the prediction match the recording?" — answered as a comparison.
+ *
+ * Recorded presence comes from the installation log, so an instrument is
+ * "recorded" while it is mounted even if it is off-screen. The detector can
+ * only find what is visible. A recorded instrument the model did not find is
+ * therefore not necessarily a model error, and the answer says so rather than
+ * scoring it as one.
+ */
+function answerCompare(facts: VideoFacts): string | null {
+  const gt = facts.groundTruth;
+  const hasRecorded = gt?.provenance === 'recorded';
+
+  if (facts.outOfDomain) {
+    return 'There is nothing to compare: the out-of-domain guard rejected this frame, so the models were not asked to judge it.';
+  }
+
+  // Best confidence per predicted instrument, across both models.
+  const predicted = new Map<string, { confidence: number; source: string }>();
+  const offer = (label: string, confidence: number, source: string) => {
+    const current = predicted.get(label);
+    if (!current || confidence > current.confidence) predicted.set(label, { confidence, source });
+  };
+  for (const d of facts.detections) offer(d.label, d.confidence, 'detector');
+  for (const t of facts.predictedTools) offer(t.label, t.confidence, 'presence classifier');
+
+  if (predicted.size === 0) {
+    return hasRecorded
+      ? `There is nothing to compare yet: the models have not reported any instrument for this frame. Press **Analyse frames (live)**, let the video play for a moment, and ask again.\n\nFor reference, the dataset records ${join(recordedTools(facts))} ${atLower(facts)}.`
+      : 'There is nothing to compare: no models have run on this frame and there are no recorded labels for this video.';
+  }
+  if (!hasRecorded) {
+    return 'This video has no recorded labels to compare against, so the predictions cannot be checked here. Load a clip from the case library to compare against the dataset.';
+  }
+
+  const recordedLabels = new Set(gt!.tools.map((t) => t.label));
+  const name = (label: string) => toolDisplay(label);
+
+  const agree = [...predicted].filter(([label]) => recordedLabels.has(label));
+  const extra = [...predicted].filter(([label]) => !recordedLabels.has(label));
+  const unseen = [...recordedLabels].filter((label) => !predicted.has(label));
+
+  let verdict: string;
+  if (agree.length > 0 && extra.length === 0) {
+    verdict = `**Yes.** Everything the models found ${atLower(facts)} is on the dataset's list of installed instruments.`;
+  } else if (agree.length > 0) {
+    verdict = `**Partly.** Some of what the models found ${atLower(facts)} matches the dataset, and some does not.`;
+  } else {
+    verdict = `**No.** None of what the models found ${atLower(facts)} is on the dataset's list of installed instruments.`;
+  }
+
+  const lines = [verdict, ''];
+  if (agree.length > 0) {
+    lines.push(
+      `- **Matches:** ${agree.map(([l, p]) => `${name(l)} (${p.confidence}%)`).join(', ')}`
+    );
+  }
+  if (extra.length > 0) {
+    lines.push(
+      `- **Predicted but not recorded:** ${extra.map(([l, p]) => `${name(l)} (${p.confidence}%)`).join(', ')}. Most likely a wrong guess by the model.`
+    );
+  }
+  if (unseen.length > 0) {
+    lines.push(
+      `- **Recorded but not found:** ${unseen.map(name).join(', ')}. Not necessarily a miss: the dataset lists an instrument while it is installed, even when it is off-screen, and the model can only find what is visible.`
+    );
+  }
+  lines.push('', '*When the two disagree, trust the recorded labels.*');
+  return lines.join('\n');
+}
+
 export function answerFromFacts(question: string, facts: VideoFacts): GroundedAnswer | null {
   if (!hasAnyFacts(facts)) return null;
 
@@ -370,6 +458,9 @@ export function answerFromFacts(question: string, facts: VideoFacts): GroundedAn
 
   let text: string | null;
   switch (intent) {
+    case 'compare':
+      text = answerCompare(facts);
+      break;
     case 'instrument':
     case 'list':
       text = answerInstruments(facts);
@@ -390,9 +481,12 @@ export function answerFromFacts(question: string, facts: VideoFacts): GroundedAn
       text = answerRisk(facts);
       break;
     default:
-      // An unclassified question still gets the current state, which is almost
-      // always the context the asker means.
-      text = answerTask(facts);
+      // An unclassified question gets the current state only when it is
+      // plausibly about the footage. Answering "what's the weather?" with the
+      // current task reads as a malfunction, not as grounding.
+      text = /\b(video|clip|frame|case|scene|footage|surgeon|surgery|operation|robot\w*|this)\b/i.test(question)
+        ? answerTask(facts)
+        : null;
       break;
   }
 
